@@ -2964,6 +2964,7 @@ NsfRequireClassOpt(/*@notnull@*/ NsfClass *cl) {
 static void
 MakeObjNamespace(Tcl_Interp *interp, NsfObject *object) {
 
+  fprintf(stderr, "+++ MakeObjNamespace for %p %s\n", object, ObjectName(object));
 #ifdef NAMESPACE_TRACE
   fprintf(stderr, "+++ MakeObjNamespace for %s\n", ObjectName(object));
 #endif
@@ -4203,8 +4204,8 @@ NSNamespaceDeleteProc(ClientData clientData) {
 
   assert(object);
 
-  /*fprintf(stderr, "namespacedeleteproc obj=%p ns=%p\n",
-    clientData, object ? object->nsPtr : NULL);*/
+  fprintf(stderr, "namespacedeleteproc obj=%p ns=%p\n",
+    clientData, object ? object->nsPtr : NULL);
 
   MEM_COUNT_FREE("NSNamespace", object->nsPtr);
   object->nsPtr = NULL;
@@ -23073,7 +23074,7 @@ ObjectHasChildren(NsfObject *object) {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSrch;
     Tcl_HashTable *cmdTablePtr = Tcl_Namespace_cmdTablePtr(ns);
-
+    fprintf(stderr, "--- ObjectHasChildren: obj %p ns %p\n", object, ns);
     for (hPtr = Tcl_FirstHashEntry(cmdTablePtr, &hSrch); hPtr;
          hPtr = Tcl_NextHashEntry(&hSrch)) {
       Tcl_Command cmd = Tcl_GetHashValue(hPtr);
@@ -23144,7 +23145,7 @@ FreeAllNsfObjectsAndClasses(Tcl_Interp *interp, NsfCmdList **instances) {
 
   for (entry = *instances; entry; entry = entry->nextPtr) {
     NsfObject *object = (NsfObject *)entry->clorobj;
-
+    fprintf(stderr, "--- FreeAllNsfObjectsAndClasses: %p %s hasNS %d '%s'\n", object, ObjectName(object), object->nsPtr != NULL, object->nsPtr ? object->nsPtr->fullName : "n/a");
     /* delete per-object methods */
     if (object && object->nsPtr) {
       Tcl_HashEntry *hPtr;
