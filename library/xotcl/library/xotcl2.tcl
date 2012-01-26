@@ -79,25 +79,6 @@ namespace eval ::xotcl {
   namespace import ::nsf::method::alias ::nsf::is ::nsf::relation
   interp alias {} ::xotcl::next {} ::nsf::xotclnext
 
-  #
-  # create ::xotcl::MetaSlot for better compatibility with XOTcl 1
-  #
-  ::nx::Class create ::xotcl::MetaSlot -superclass ::nx::MetaSlot {
-    :property parameter
-    :method init {} {
-      if {[info exists :parameter]} {my ::nsf::classes::xotcl::Class::parameter ${:parameter}}
-      next
-    }
-    # provide minimal compatibility
-    :public forward instproc %self public method
-    :public forward proc %self public class method
-  }
-
-  #
-  # Create ::xotcl::Attribute for compatibility
-  #
-  ::xotcl::MetaSlot create ::xotcl::Attribute -superclass ::nx::VariableSlot
-
   proc ::xotcl::self {{arg ""}} {
       switch $arg {
 	"" {uplevel ::nsf::self}
@@ -928,6 +909,34 @@ namespace eval ::xotcl {
 
   proc myproc {args} {linsert $args 0 [::xotcl::self]}
   proc myvar  {var}  {:requireNamespace; return [::xotcl::self]::$var}
+
+  #
+  # create ::xotcl::MetaSlot for better compatibility with XOTcl 1
+  #
+  ::nx::Class create ::xotcl::MetaSlot -superclass ::nx::MetaSlot {
+    :property parameter
+    :method init {} {
+      if {[info exists :parameter]} {my ::nsf::classes::xotcl::Class::parameter ${:parameter}}
+      next
+    }
+    # provide minimal compatibility
+    :public forward instproc %self public method
+    :public forward proc %self public class method
+    #
+    # As NX/XOTcl hybrids, all slot kinds would not inherit the
+    # unknown behaviour of ::xotcl::Class. Therefore, we need to
+    # provide it explicitly to slots for backward compatibility ...
+    #
+    :public alias unknown ::nsf::classes::xotcl::Class::unknown
+  }
+
+  #
+  # Create ::xotcl::Attribute for compatibility
+  #
+  ::xotcl::MetaSlot create ::xotcl::Attribute -superclass ::nx::VariableSlot
+  #
+  # TODO: multivalued emulation is missing!
+  #
 
   #
   # Provide a backward compatible version of ::xotcl::alias
