@@ -924,8 +924,8 @@ namespace eval ::xotcl {
     :public forward proc %self public class method
     #
     # As NX/XOTcl hybrids, all slot kinds would not inherit the
-    # unknown behaviour of ::xotcl::Class. Therefore, we need to
-    # provide it explicitly to slots for backward compatibility ...
+    # unknown behaviour of ::xotcl::Class. Therefore, we provide it
+    # explicitly to slots for backward compatibility ...
     #
     :public alias unknown ::nsf::classes::xotcl::Class::unknown
   }
@@ -933,10 +933,18 @@ namespace eval ::xotcl {
   #
   # Create ::xotcl::Attribute for compatibility
   #
-  ::xotcl::MetaSlot create ::xotcl::Attribute -superclass ::nx::VariableSlot
-  #
-  # TODO: multivalued emulation is missing!
-  #
+  ::xotcl::MetaSlot create ::xotcl::Attribute -superclass ::nx::VariableSlot {
+    :property multivalued {
+      :public method assign {object property value} {
+	set mClass [expr {$value?"0..n":"1..1"}]
+	$object incremental $value
+	$object multiplicity $mClass
+      }
+      :public method get {object property} {
+	return [$object eval [list :isMultivalued]]
+      }
+    }
+  }
 
   #
   # Provide a backward compatible version of ::xotcl::alias
