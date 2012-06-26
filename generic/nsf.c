@@ -20622,7 +20622,7 @@ NsfRelationCmd(Tcl_Interp *interp, NsfObject *object,
       case RelationtypeClass_mixinIdx:
         return clopt ? MixinInfo(interp, clopt->classMixins, NULL, 1, NULL) : TCL_OK;
       case RelationtypeClass_filterIdx:
-        return objopt ? FilterInfo(interp, clopt->classFilters, NULL, 1, 0) : TCL_OK;
+        return clopt ? FilterInfo(interp, clopt->classFilters, NULL, 1, 0) : TCL_OK;
       }
     }
 
