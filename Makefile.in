@@ -242,7 +242,7 @@ EXAMPLE_SCRIPTS = \
 	$(src_doc_dir)/example-scripts/traits-composite.html \
 	$(src_doc_dir)/example-scripts/traits-simple.html \
 	$(src_doc_dir)/example-scripts/container.html \
-
+	$(src_doc_dir)/example-scripts/linearisation.html	      
 
 %.html : %.tcl
 	$(TCLSH) $(src_app_dir_native)/utils/source-doc-beautifier.tcl $<
