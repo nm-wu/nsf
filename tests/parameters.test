@@ -1344,29 +1344,40 @@ nx::Test case slot-trace-interaction {
   # per-object:
   #
 
+  package req nx::serializer
+
   Object create o 
-  
+
+  ? {o eval {info exists :a}} 0
   ? {o property {a 0} {
     set :defaultcmd {set _ 4}
   }} "defaultcmd can't be used together with default value"
 
+  ? {o eval {info exists :a}} 0
+
+  ? {o eval {info exists :b}} 0
   ? {o property {b 0} {
     set :valuecmd {set _ 44}
   }} "valuecmd can't be used together with default value"
+  ? {o eval {info exists :b}} 0
 
+  ? {o eval {info exists :c}} 0
   ? {o property c {
     set :defaultcmd {set _ 4}
     set :valuecmd {set _ 44}
   }} "valuecmd can't be used together with defaultcmd"
+  ? {o eval {info exists :c}} 0
   
   #
   # valuechangedcmd + default value are allowed
   #
 
+  ? {o eval {info exists :a}} 0
   o property {a 0} {
     set :valuechangedcmd {::nsf::var::set $obj $var [expr [list [::nsf::var::set $obj $var] + 1]]}
   }
-  
+  ? {o eval {info exists :a}} 1
+
   ? {o a} 1
   ? {o a 1} 2
   ? {o a} 2
@@ -1393,8 +1404,15 @@ nx::Test case slot-trace-interaction {
     set :valuechangedcmd {::nsf::var::set $obj $var [expr [list [::nsf::var::set $obj $var] + 1]]}
   }
 
+  #
+  # TODO: Right now, the per-object traces *do* fire upon setting the
+  # default value; the per-class traces won't ... this should be
+  # symmetric, either way ...
+  #
+  
   Klass create k
-  ? {k a} 1
+  ? {k eval {info exists :a}} 1
+  ? {k a} 0; # should be 1, reflecting the corresponding per-object case above
   ? {k a 1} 2
   ? {k a} 2
   ? {k a 2} 3

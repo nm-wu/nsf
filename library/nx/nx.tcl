@@ -1244,9 +1244,10 @@ namespace eval ::nx {
       if {[info exists :initcmd]} {
 	lappend options initcmd
 	if {[info exists :default]} {
-	  append :initcmd "\n" "::nsf::var::set \[::nsf::self\] ${:name} ${:default};\n"
+	  append initcmd "::nsf::var::set \[::nsf::self\] ${:name} ${:default};\n"
 	}
-	set :parameterSpec [list [:namedParameterSpec $prefix ${:name} $options] ${:initcmd}]
+	append initcmd ${:initcmd}
+	set :parameterSpec [list [:namedParameterSpec $prefix ${:name} $options] $initcmd]
       } elseif {[info exists :default]} {
 	# deactivated for now: || [string first {$} ${:default}] > -1
 	if {[string match {*\[*\]*} ${:default}]} {
