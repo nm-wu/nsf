@@ -1638,7 +1638,11 @@ namespace eval ::nx {
   ::nx::VariableSlot protected method getParameterOptions {
     {-withMultiplicity 0}
     {-forObjectParameter 0}
+    {-forValueCheck 0}
   } {
+    if {$forObjectParameter && $forValueCheck} {
+      error "The options 'forObjectParameter' and 'forValueCheck' are mutually exclusive."
+    }
     set options ""
     set slotObject ""
     if {[info exists :type]} {
@@ -1666,20 +1670,26 @@ namespace eval ::nx {
       # In case the "get" method was provided on the slot, ask nsf to call it directly
       lappend options slot=[::nsf::self]
     }
-    if {[:info lookup method initialize] ne "" && $forObjectParameter} {
-      if {"slot=[::nsf::self]" ni $options} {lappend options slot=[::nsf::self]}
-      lappend options slotinitialize
-    }
-    if {[info exists :arg]} {lappend options arg=${:arg}}
-    if {${:required}} {
-      lappend options required
-    } elseif {[info exists :positional] && ${:positional}} {
-      lappend options optional
-    }
-    if {${:convert}} {lappend options convert}
+
     if {$withMultiplicity && [info exists :multiplicity] && ${:multiplicity} ne "1..1"} {
       lappend options ${:multiplicity}
     }
+
+    if {[info exists :arg]} {lappend options arg=${:arg}}
+
+    if {!$forValueCheck} {
+      if {[:info lookup method initialize] ne "" && $forObjectParameter} {
+	if {"slot=[::nsf::self]" ni $options} {lappend options slot=[::nsf::self]}
+	lappend options slotinitialize
+      }
+      if {${:required}} {
+	lappend options required
+      } elseif {[info exists :positional] && ${:positional}} {
+	lappend options optional
+      }
+      if {${:convert}} {lappend options convert}
+    }
+    
     if {$forObjectParameter} {
       if {[info exists :substdefault] && ${:substdefault}} {
 	lappend options substdefault
@@ -1688,7 +1698,7 @@ namespace eval ::nx {
 	lappend options noconfig
       }
     }
-    #puts stderr "*** getParameterOptions [self] returns '$options'"
+    puts stderr "*** getParameterOptions [self] returns '$options'"
     return $options
   }
 

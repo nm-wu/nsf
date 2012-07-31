@@ -2232,6 +2232,23 @@ nx::Test case object-level-variable {
 
 }
 
+nx::Test case object-level-defaults {
+  #
+  # Right now, this fails yelling:
+  # 'invalid value constraints "slot=::objekt::per-object-slot::a,slotassign"'
+  #
+  nx::Object create objekt 
+  ? {objekt eval {info exists :a}} 0
+  ? {catch {
+    objekt variable -accessor -initblock {
+      :public method assign args {
+	next
+      }
+    } a 1}} 0
+  ? {objekt eval {info exists :a}} 1
+  ? {objekt a} 1
+}
+
 #
 # test class level property and variable
 #
