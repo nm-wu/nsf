@@ -1620,19 +1620,24 @@ namespace eval ::nx {
     if {[::nsf::var::exists $object ${:name}] && !$nocomplain} {
       error "object $object has already an instance variable named '${:name}'"
     }
-    set options [:getParameterOptions -withMultiplicity true]
+    set options [:getParameterOptions -forValueCheck true -withMultiplicity true]
     if {[llength $options]} {
       ::nsf::is -complain [join $options ,] $value
     }
-    
-    set traces [::nsf::directdispatch $object -frame object ::trace info variable ${:name}]
+   
+    set restoreCmd ""
+    set traces [::nsf::directdispatch $object \
+		    -frame object ::trace info variable ${:name}]
     foreach trace $traces { 
       lassign $trace ops cmdPrefix
-      ::nsf::directdispatch $object -frame object ::trace remove variable ${:name} $ops $cmdPrefix
-      append restore "[list ::nsf::directdispatch $object -frame object ::trace add variable ${:name} $ops $cmdPrefix]\n"
+      ::nsf::directdispatch $object \
+	  -frame object ::trace remove variable ${:name} $ops $cmdPrefix
+      append restoreCmd "[list ::nsf::directdispatch $object \
+				-frame object ::trace add variable \
+				${:name} $ops $cmdPrefix]\n"
     }
     ::nsf::var::set $object ${:name} ${:default}
-    if {[info exists restore]} { {*}$restore }
+    {*}$restoreCmd
   }
 
   ::nx::VariableSlot protected method getParameterOptions {
