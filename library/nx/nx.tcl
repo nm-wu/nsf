@@ -1315,12 +1315,11 @@ namespace eval ::nx {
       if {[info exists :initcmd]} {
 	lappend options initcmd
 	if {[info exists :default]} {
-	  # append initcmd "[::nsf::self] setCheckedInstVar -nocomplain \[::nsf::self\] [list ${:default}]\n"
-	  append initcmd "::nsf::var::set \[::nsf::self\] ${:name} [list ${:default}]\n"
+	  append initcmd "[::nsf::self] setCheckedInstVar -nocomplain \[::nsf::self\] [list ${:default}]\n"
+	  # append initcmd "::nsf::var::set \[::nsfX::self\] ${:name} [list ${:default}]\n"
 	}
 	append initcmd ${:initcmd}
 	set :parameterSpec [list [:namedParameterSpec $prefix ${:name} $options] $initcmd]
-
       } elseif {[info exists :default]} {
 	# deactivated for now: || [string first {$} ${:default}] > -1
 	if {[string match {*\[*\]*} ${:default}]} {
@@ -1620,7 +1619,18 @@ namespace eval ::nx {
     if {[::nsf::var::exists $object ${:name}] && !$nocomplain} {
       error "object $object has already an instance variable named '${:name}'"
     }
-    set options [:getParameterOptions -forValueCheck true -withMultiplicity true]
+
+    set options [:getParameterOptions -withMultiplicity true {$option ni {
+      slotassign 
+      slotinitialize 
+      positional 
+      convert 
+      substdefault 
+      noconfig 
+      initcmd 
+      required
+    }}]
+    
     if {[llength $options]} {
       ::nsf::is -complain [join $options ,] $value
     }
@@ -1706,6 +1716,75 @@ namespace eval ::nx {
     puts stderr "*** getParameterOptions [self] returns '$options'"
     return $options
   }
+
+  # filters: slotassign slotinitialize positional convert substdefault
+  # noconfig initcmd required ...
+
+  ::nx::VariableSlot protected method getParameterOptions {
+    {-withMultiplicity 0}
+    {-forObjectParameter 0}
+    filterCmd:optional
+  } {
+    set options ""
+    set slotObject ""
+    if {[info exists :type]} {
+      set type ${:type}
+      if {$type eq "switch" && !$forObjectParameter} {set type boolean}
+      if {$type eq "initcmd"} {
+	lappend options initcmd
+      } elseif {[string match ::* $type]} {
+	lappend options [expr {[::nsf::is metaclass $type] ? "class" : "object"}] type=$type
+      } else {
+	lappend options $type
+	if {$type ni [list "" \
+			     "boolean" "integer" "object" "class" \
+			     "metaclass" "baseclass" "parameter" \
+			     "alnum" "alpha" "ascii" "control" "digit" "double" \
+			     "false" "graph" "lower" "print" "punct" "space" "true" \
+			     "wideinteger" "wordchar" "xdigit" ]} {
+	  lappend options slot=[::nsf::self] 
+	}
+      }
+    } elseif {[:info lookup method assign] ne "::nsf::classes::nx::VariableSlot::assign"} {
+      # In case the "assign method" was provided, ask nsf to call it directly
+      lappend options slot=[::nsf::self] slotassign
+    }
+    if {[:info lookup method initialize] ne "" && $forObjectParameter} {
+      if {"slot=[::nsf::self]" ni $options} {lappend options slot=[::nsf::self]}
+      lappend options slotinitialize
+    }
+    if {[info exists :arg]} {lappend options arg=${:arg}}
+    if {${:required}} {
+      lappend options required
+    } elseif {[info exists :positional] && ${:positional}} {
+      lappend options optional
+    }
+    if {${:convert}} {lappend options convert}
+    if {$withMultiplicity && [info exists :multiplicity] && ${:multiplicity} ne "1..1"} {
+      lappend options ${:multiplicity}
+    }
+    if {$forObjectParameter} {
+      if {[info exists :substdefault] && ${:substdefault}} {
+	lappend options substdefault
+      }
+      if {[info exists :config] && !${:config}} {
+	lappend options noconfig
+      }
+    }
+    if {![info exists filterCmd]} { 
+      # puts stderr "*** getParameterOptions [self] returns '$options'"
+      return $options;
+    }
+    set filteredOptions [list]
+    foreach o $options {
+      if {[apply [list option [list expr $filterCmd]] $o]} {
+	lappend filteredOptions $o
+      }
+    }
+    puts stderr "*** getParameterOptions [self] returns filtered opts: '$filteredOptions'"
+    return $filteredOptions
+  }
+
 
   ::nx::VariableSlot protected method isMultivalued {} {
     return [string match {*..[n*]} ${:multiplicity}]
