@@ -9582,9 +9582,55 @@ ProcMethodDispatch(ClientData cp, Tcl_Interp *interp, int objc, Tcl_Obj *CONST o
     cscPtr->objc = objc;
     cscPtr->objv = (Tcl_Obj **)objv;
 
+
     if (likely(result == TCL_OK)) {
+
+      if ((((Command *)cmdPtr)->flags & CMD_HAS_EXEC_TRACES)) {
+	int i;
+	Nsf_Param *paramPtr;
+	Tcl_Obj *argNameObjs = Tcl_NewListObj(0, NULL);
+	Tcl_Obj *argValueObjs = Tcl_NewListObj(0, NULL);
+	Tcl_Obj *argObjs = Tcl_NewListObj(2, NULL);
+	Tcl_Obj *traceObjv[3];
+
+	/* numArgs = framePtr->procPtr->numArgs;
+	argObjs = (Tcl_Obj **) TclStackAlloc(interp,
+	(int) sizeof(Tcl_Obj *) * (numArgs+1));*/
+	
+	for (i = 1, paramPtr = paramDefs->paramsPtr; paramPtr->name; paramPtr++, i++) {
+	  if(pcPtr->full_objv[i] != NsfGlobalObjs[NSF___UNKNOWN__]) {
+	    Tcl_ListObjAppendElement(interp, argValueObjs, pcPtr->full_objv[i]);
+	    Tcl_ListObjAppendElement(interp, argNameObjs, paramPtr->nameObj);
+	  }
+	}
+	
+	traceObjv[0] = object->cmdName;
+	traceObjv[1] = objv[0];
+
+	Tcl_ListObjAppendElement(interp, argObjs, argNameObjs);
+	Tcl_ListObjAppendElement(interp, argObjs, argValueObjs);
+
+	INCR_REF_COUNT(argObjs);
+	traceObjv[2] = argObjs;
+	if((result = TclCheckExecutionTraces(interp, 
+					     Tcl_GetCommandName(interp, cmdPtr), 
+					     strlen(Tcl_GetCommandName(interp,cmdPtr)),
+					     (Command *)cmdPtr, 
+					     result, 
+					     TCL_TRACE_ENTER_EXEC, 
+					     3, traceObjv)) == TCL_ERROR) {
+	  /* Some error handling needed? */
+	  DECR_REF_COUNT(argObjs);
+	  goto prep_done;
+	}
+	DECR_REF_COUNT(argObjs);
+      }
+
       releasePc = 1;
-      result = PushProcCallFrame(cp, interp, pcPtr->objc+1, pcPtr->full_objv, cscPtr);
+      result = PushProcCallFrame(cp, interp, pcPtr->objc+1, pcPtr->full_objv, cscPtr); 
+
+      
+
     } else {
       /*
        * some error occurred

@@ -13,116 +13,118 @@
 
 package require nx::test
 
-nx::Class create Sensor {
-  :property -accessor public {value:integer 1}
-}
+nx::test case existing-impl {
 
-set invar [list {[regexp {^[0-9]$} ${:value}] == 1}]
-
-::nsf::method::assertion Sensor class-invar $invar
-
-? {::nsf::method::assertion Sensor class-invar} $invar
-
-#
-# Minimal object interface to ::nsf::method::assertion
-#
-
-#
-# TODO: This should not be ::nx::VariableSlot below, but
-# ::nx::ObjectParameterSlot mixes alias + slotassign.
-#
-
-::nx::VariableSlot create ::nx::Object::slot::object-invariant {
-  :public object method get {obj prop} {
-    ::nsf::method::assertion $obj object-invar
+  nx::Class create Sensor {
+    :property -accessor public {value:integer 1}
+  }
+  
+  set ::invar [list {[regexp {^[0-9]$} ${:value}] == 1}]
+  
+  ::nsf::method::assertion Sensor class-invar $::invar
+  
+  ? {::nsf::method::assertion Sensor class-invar} $::invar
+  
+  #
+  # Minimal object interface to ::nsf::method::assertion
+  #
+  
+  #
+  # TODO: This should not be ::nx::VariableSlot below, but
+  # ::nx::ObjectParameterSlot mixes alias + slotassign.
+  #
+  
+  ::nx::VariableSlot create ::nx::Object::slot::object-invariant {
+    :public object method get {obj prop} {
+      ::nsf::method::assertion $obj object-invar
+    }
+    
+    :public object method assign {obj prop value} {
+      ::nsf::method::assertion $obj object-invar $value
+    }
+  }
+  
+  ::nx::VariableSlot create ::nx::Class::slot::invariant {
+    :public object method get {cls prop} {
+      ::nsf::method::assertion $cls class-invar
+    }
+    
+    :public object method assign {cls prop value} {
+      ::nsf::method::assertion $cls class-invar $value
+    }
+  }
+  
+  ? {Sensor cget -invariant} $::invar 
+  
+  ? {::nsf::method::assertion Sensor class-invar} $::invar
+  
+  ? {Sensor configure -invariant ""} ""
+  
+  ? {Sensor cget -invariant} ""
+  
+  ? {::nsf::method::assertion Sensor class-invar} ""
+  
+  ? {Sensor configure -invariant $::invar} ""
+  
+  ? {Sensor cget -invariant} $::invar 
+  
+  ? {::nsf::method::assertion Sensor class-invar} $::invar
+  
+  Sensor create s1
+  
+  ? {s1 cget -object-invariant} ""
+  
+  ? {s1 configure -object-invariant $::invar} ""
+  
+  ? {s1 cget -object-invariant} $::invar
+  
+  ? {s1 configure -object-invariant ""} ""
+  
+  
+  #
+  # TODO: re-position -pre-condition, to appear before the method
+  # body. This would ease reading.
+  #
+  #
+  # TODO: Why is there a firm requirement to provide a post-condition,
+  # when defining a pre-condition (they are non-positional
+  # parameters in NX)?
+  #
+  # --> because of XOTcl2 legacy interface? 
+  # i.e.: precondition:optional postcondition:optional
+  #
+  
+  
+  Sensor public method incrValue {} {
+    incr :value
+  } -precondition {
+    {[llength [set ::ARGS [nsf::current args]]]}
+    {# pre-condition:} 
+    {${:value} > 0}
+  } -postcondition {
+    {[puts stderr POST=${:value}] eq ""}
+    {# post-condition:} 
+    {${:value} > 1}
   }
 
-  :public object method assign {obj prop value} {
-    ::nsf::method::assertion $obj object-invar $value
+  proc bar args {
+    s1 incrValue
   }
-}
+      
+      
+  #
+  # TODO: How to activate, deactivate RAC per object? Re-introduce check() method?
+  #
 
-::nx::VariableSlot create ::nx::Class::slot::invariant {
-  :public object method get {cls prop} {
-    ::nsf::method::assertion $cls class-invar
-  }
+  # s1 check pre
+  ::nsf::method::assertion s1 check pre
 
-  :public object method assign {cls prop value} {
-    ::nsf::method::assertion $cls class-invar $value
-  }
-}
+  ? {bar 1 2 3} "2"
 
-? {Sensor cget -invariant} $invar 
-
-? {::nsf::method::assertion Sensor class-invar} $invar
-
-? {Sensor configure -invariant ""} ""
-
-? {Sensor cget -invariant} ""
-
-? {::nsf::method::assertion Sensor class-invar} ""
-
-? {Sensor configure -invariant $invar} ""
-
-? {Sensor cget -invariant} $invar 
-
-? {::nsf::method::assertion Sensor class-invar} $invar
-
-Sensor create s1
-
-? {s1 cget -object-invariant} ""
-
-? {s1 configure -object-invariant $invar} ""
-
-? {s1 cget -object-invariant} $invar
-
-? {s1 configure -object-invariant ""} ""
-
-
-#
-# TODO: re-position -pre-condition, to appear before the method
-# body. This would ease reading.
-#
-#
-# TODO: Why is there a firm requirement to provide a post-condition,
-# when defining a pre-condition (they are non-positional
-# parameters in NX)?
-#
-# --> because of XOTcl2 legacy interface? 
-# i.e.: precondition:optional postcondition:optional
-#
-
-
-Sensor public method incrValue {} {
-  incr :value
-} -precondition {
-  {[set ::ARGS [nsf::current args]] eq "run {bar 1 2 3}"}
-  {# pre-condition:} 
-  {${:value} > 0}
-} -postcondition {
-  {[puts stderr POST=${:value}] eq ""}
-  {# post-condition:} 
-  {${:value} > 1}
-  }
-
-proc bar args {
-  s1 incrValue
-}
-
-
-#
-# TODO: How to activate, deactivate RAC per object? Re-introduce check() method?
-#
-
-# s1 check pre
-::nsf::method::assertion s1 check pre
-
-? {bar 1 2 3} "2"
-
-#
-# TODO: ::nsf::current jumps the call stack, picks an arbitrary call
-# frame if the context provides for it.
-#
+  #
+  # TODO: ::nsf::current jumps the call stack, picks an arbitrary call
+  # frame if the context provides for it.
+  #
 
 ? {info exists ::ARGS} 1
 ? {set ::ARGS} "run {bar 1 2 3}" 
@@ -133,8 +135,10 @@ proc bar args {
 #
 
 catch {s1 incrValue} ::msg
-? {set ::msg} {error in Assertion: {[set ::ARGS [nsf::current args]] eq "run {bar 1 2 3}"} in proc 'incrValue'
-can't find proc}
+? {set ::msg} {assertion failed check: {[llength [set ::ARGS [nsf::current args]]]} in proc 'incrValue'}
+
+# NOTE: at top level "::", this yields "can't find proc" because
+# [current args] is situated in an obj frame ...
 
 ? {s1 value -1} -1
 ? {s1 value 10} 10
@@ -521,3 +525,72 @@ nx::Class create Z -invariant {
 
 ::nsf::method::assertion z1 check {}
 
+}
+
+
+nx::test case trace-impl {
+
+  # / / / / / / / / / / / / / / / / / / / / / / / / / /
+  # Towards a minimal RAC implementation using [trace]
+  #
+
+  nx::Class create S {
+    :public method foo {a:integer b c:optional} {
+      puts stderr FOO
+    } 
+  }
+
+  # -precondition {
+  #  {[llength [[:info class] eval [list lappend :TRACE "::S-foo-PRE"]]]}
+  # }
+
+  set precond {$a == 1 && ![info exists :z] && [puts stderr ****[info vars],${:z}] eq ""}
+
+  # set enterCmdPrefix [list apply {{assertion localVars call ops} {
+
+  #   set argv [lassign $call mh]
+  #   lassign $argv {*}$localVars
+    
+  #   ::nsf::__db_show_stack
+  #   puts stderr >>>>>>>>[uplevel 1 [list current args]]
+  #   puts stderr +++++++++++[expr $assertion][info vars]
+  #   puts stderr --localVars=$localVars,call=$call,ops=$ops,[info vars],[info locals]; puts stderr SELF=[current]
+  #   if {![expr $assertion]} {
+  #     return -code error "Run-time assertion check failed."
+  #   }}} $precond [S info method args foo]]
+
+  proc assert {assertion call ops} {
+    # ::nsf::__db_show_stack
+    lassign $call obj mh argv
+    set cmd [list ::apply [list [lindex $argv 0] [list expr $assertion]] {*}[lindex $argv 1]]
+    puts stderr cmd=$cmd
+    set r [$obj eval $cmd]
+    if {!$r} {
+      return -code error "Run-time assertion check failed."
+    }
+  }
+
+  set enterCmdPrefix [list assert $precond]
+
+  puts stderr enterCmdPrefix=$enterCmdPrefix
+
+  ::trace add execution [S info method handle foo] enter $enterCmdPrefix
+
+  # -postcondition {
+  #  {[llength [[:info class] eval [list lappend :TRACE "::S-foo-POST"]]]}
+  # }
+
+  ::trace add execution [S info method handle foo] leave $enterCmdPrefix
+
+  puts stderr >>>>[S info methods],[S info method args foo]
+
+  S create s1 {
+    set :z YYY
+  }
+  puts stderr [s1 [S info method handle foo] 1 2]
+
+  # 1) Why are the execution traces not fired upon method execution, only direct cmd calls?
+  # 2) How does the trace dispatcher obtain the unfolded argument vector?
+  # 3) How can I provide the object context to enter/leave traces?
+
+}
