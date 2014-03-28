@@ -22342,10 +22342,16 @@ GetObjectParameterDefinition(Tcl_Interp *interp, Tcl_Obj *procNameObj,
    * creating objects of this class.
    */
 
-  if (likely(class && class->parsedParamPtr)) {
+  if (likely(class && class->parsedParamPtr) 
+#if defined(PER_OBJECT_PARAMETER_CACHING)
+      && class->classParamPtrEpoch == RUNTIME_STATE(interp)->classParamPtrEpoch
+#endif
+      ) {
     NsfParsedParam *clParsedParamPtr = class->parsedParamPtr;
     parsedParamPtr->paramDefs = clParsedParamPtr->paramDefs;
     parsedParamPtr->possibleUnknowns = clParsedParamPtr->possibleUnknowns;
+    /* fprintf(stderr, "reuse class param for class %p  %s paramPtr %p\n",
+       class, ClassName(class), clParsedParamPtr);*/
     result = TCL_OK;
 
 #if defined(PER_OBJECT_PARAMETER_CACHING)
@@ -22391,7 +22397,13 @@ GetObjectParameterDefinition(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 	  ppDefPtr->paramDefs = parsedParamPtr->paramDefs;
 	  ppDefPtr->possibleUnknowns = parsedParamPtr->possibleUnknowns;
 	  if (class) {
-	    class->parsedParamPtr = ppDefPtr;
+#if defined(PER_OBJECT_PARAMETER_CACHING)
+            if (class->parsedParamPtr) {
+              NsfParameterInvalidateClassCacheCmd(interp, class);
+            }
+	    class->classParamPtrEpoch = RUNTIME_STATE(interp)->classParamPtrEpoch;
+#endif
+            class->parsedParamPtr = ppDefPtr;
 #if defined(PER_OBJECT_PARAMETER_CACHING)
 	  } else {
 	    NsfObjectOpt *opt = NsfRequireObjectOpt(object);

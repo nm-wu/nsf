@@ -535,6 +535,9 @@ typedef struct NsfClass {
   Tcl_HashTable instances;
   Tcl_Namespace *nsPtr;
   NsfParsedParam *parsedParamPtr;
+#if defined(PER_OBJECT_PARAMETER_CACHING)
+  int classParamPtrEpoch;
+#endif
   NsfClassOpt *opt;
   short color;
 } NsfClass;
