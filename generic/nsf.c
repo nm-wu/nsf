@@ -4413,7 +4413,7 @@ NsfMethodNamePath(Tcl_Interp *interp,
   Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
   assert(interp);
-  assert(methodName);
+  // assert(methodName);
 
   if (framePtr == NULL) {
     /* We default to the top frame, if not requested otherwise */
@@ -4421,12 +4421,32 @@ NsfMethodNamePath(Tcl_Interp *interp,
   }
 
   if (framePtr) {
-    Tcl_ListObjAppendList(interp, resultObj,
-			  CallStackMethodPath(interp, framePtr));
+    Tcl_Obj *resObj, **ovArgs;
+    int ocArgs;
+
+    resObj = CallStackMethodPath(interp, framePtr);
+    fprintf(stderr, "/////// CallStackMethodPath returns resObj=<%s>, framePtr=%p\n", ObjStr(resObj),framePtr);
+    if (Tcl_ListObjGetElements(interp, resObj, &ocArgs, &ovArgs) == TCL_OK
+        && ocArgs == 0) {
+      if (methodName != NULL) {
+        Tcl_ListObjAppendElement(interp, resultObj,
+                                 Tcl_NewStringObj(methodName,-1));
+      }
+      DECR_REF_COUNT(resObj);
+    } else {
+      Tcl_ListObjAppendList(interp, resultObj,
+                               resObj);
+
+    }
+    
+  } else {
+    fprintf(stderr, "/////// NO FRAME PTR; method name %p\n", methodName);
+    if (methodName != NULL) {
+      Tcl_ListObjAppendElement(interp, resultObj,
+                               Tcl_NewStringObj(methodName,-1));
+    }
   }
 
-  Tcl_ListObjAppendElement(interp, resultObj,
-                           Tcl_NewStringObj(methodName,-1));
   return resultObj;
 }
 
@@ -12452,7 +12472,7 @@ ObjectCmdMethodDispatch(NsfObject *invokedObject, Tcl_Interp *interp, int objc, 
       Tcl_ListObjAppendList(interp, callInfoObj, methodPathObj);
       Tcl_ListObjAppendElement(interp, callInfoObj, objv[1]);
 
-      /*fprintf(stderr, "DispatchUnknownMethod is called with callinfo <%s> \n", ObjStr(callInfoObj));*/
+      fprintf(stderr, "DispatchUnknownMethod is called with callinfo <%s> methodpath <%s>\n", ObjStr(callInfoObj), ObjStr(methodPathObj));
       result = DispatchUnknownMethod(interp, invokedObject, objc-1, objv+1, callInfoObj,
 				     objv[1], NSF_CM_NO_OBJECT_METHOD|NSF_CSC_IMMEDIATE);
       DECR_REF_COUNT(callInfoObj);
@@ -26156,9 +26176,10 @@ NsfCurrentCmd(Tcl_Interp *interp, int selfoption) {
     break;
 
   case CurrentoptionMethodpathIdx:
-    cscPtr = CallStackGetTopFrame0(interp);
+    // cscPtr = CallStackGetTopFrame0(interp);
+    cscPtr = CallStackGetTopFrame(interp, &framePtr);
     Tcl_SetObjResult(interp, NsfMethodNamePath(interp,
-					       NULL /* use topmost frame */,
+                                               framePtr,
 					       Tcl_GetCommandName(interp, cscPtr->cmdPtr)));
     break;
 

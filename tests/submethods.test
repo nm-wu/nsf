@@ -431,6 +431,7 @@ nx::test case submethods-current-introspection {
 
     :FOO foo
     :BAR BUU boo
+    puts stderr 1
     :baz
 
     :object method "a b" {} $calleeBody
@@ -441,6 +442,7 @@ nx::test case submethods-current-introspection {
 
     :FOO foo
     :BAR BUU boo
+    puts stderr 2
     :baz
 
     # TODO: :method "a b c" {} $calleeBody; FAILS -> "can't append to scripted"
@@ -452,6 +454,7 @@ nx::test case submethods-current-introspection {
 
     :FOO foo
     :BAR BUU boo
+    puts stderr 3
     :baz
   }
   

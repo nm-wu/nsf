@@ -248,6 +248,8 @@ NsfObjWrongArgs(Tcl_Interp *interp, CONST char *msg, Tcl_Obj *cmdName,
     need_space = 1;
   }
 
+  fprintf(stderr, ">>>>>>> here\n");
+  NsfShowStack(interp);
   if (methodName) {
     Tcl_Obj *resultObj;
 
@@ -256,6 +258,7 @@ NsfObjWrongArgs(Tcl_Interp *interp, CONST char *msg, Tcl_Obj *cmdName,
     resultObj = NsfMethodNamePath(interp, 
 				  NULL /* use topmost frame */, 
 				  NsfMethodName(methodName));
+    fprintf(stderr, "<<<<<<<< there: %s\n", ObjStr(resultObj));
     INCR_REF_COUNT(resultObj);
     Tcl_AppendResult(interp, ObjStr(resultObj), (char *) NULL);
     DECR_REF_COUNT(resultObj);

@@ -749,22 +749,25 @@ CallStackMethodPath(Tcl_Interp *interp, Tcl_CallFrame *framePtr) {
    * Append all ensemble names to the specified list obj
    */
 
-  for (/* Skipping the starting frame, assuming a "leaf" frame in an ensemble dispatch */
-       framePtr = Tcl_CallFrame_callerPtr(framePtr), elements = 0;
+  fprintf(stderr,"x x x x x x x x x x: %p, next %p\n", framePtr, Tcl_CallFrame_callerPtr(framePtr));
+  NsfShowStack(interp);
+
+  for (/* Skipping the starting frame, assuming a "leaf" frame in an ensemble dispatch
+       framePtr = Tcl_CallFrame_callerPtr(framePtr),  */ elements = 0;
        Tcl_CallFrame_isProcCallFrame(framePtr) & (FRAME_IS_NSF_CMETHOD|FRAME_IS_NSF_METHOD);
        framePtr = Tcl_CallFrame_callerPtr(framePtr)) {
 
     NsfCallStackContent *cscPtr = (NsfCallStackContent *)Tcl_CallFrame_clientData(framePtr);
     assert(cscPtr);
 
-    /*fprintf(stderr,	"--- frame %p cmdPtr %p cmd %s NSF_CSC_TYPE_ENSEMBLE %d \
+    fprintf(stderr,	"--- frame %p cmdPtr %p cmd %s NSF_CSC_TYPE_ENSEMBLE %d \
 			NSF_CSC_CALL_IS_ENSEMBLE %d NSF_CSC_TYPE_INACTIVE %d\n",
 	    framePtr,
 	    cscPtr->cmdPtr,
 	    Tcl_GetCommandName(interp, cscPtr->cmdPtr),
 	    (cscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) != 0,
 	    (cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) != 0,
-	    (cscPtr->frameType & NSF_CSC_TYPE_INACTIVE) != 0);*/
+	    (cscPtr->frameType & NSF_CSC_TYPE_INACTIVE) != 0);
 
     /*
      * The "ensemble" call type, we find applied to all intermediate and leaf
@@ -772,7 +775,7 @@ CallStackMethodPath(Tcl_Interp *interp, Tcl_CallFrame *framePtr) {
      * effectively omit leaf ensemble and non-ensemble frames from being
      * reported.
      */
-    if ((cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) == 0) break;
+    if ((cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) == 0 && (cscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) == 0) break;
 
     /* Do not record any INACTIVE frames in the method path */
     if ((cscPtr->frameType & NSF_CSC_TYPE_INACTIVE)) continue;

@@ -1294,14 +1294,14 @@ nx::test case dispo-object-targets {
   # Dispatch with a method handle
   #
   ::T mixin set {}
-  ? [list [T create t] $methods(z) XXX] \
-      "CURRENT-::obj-DELEGATOR-::t-UNKNOWNMETHOD-XXX-PATH-::nsf::classes::T::z"
-  T setObjectParams x:alias,method=$methods(z)
-  ? {T create t XXX} "CURRENT-::obj-DELEGATOR-::t-UNKNOWNMETHOD-XXX-PATH-::nsf::classes::T::z" \
-      "Non-object FQ selector with default unknown handler"
-  ::T mixin set UnknownHandler
-  ? {T create t XXX} "CURRENT-::obj-DELEGATOR-::t-UNKNOWNMETHOD-XXX-PATH-::nsf::classes::T::z" \
-      "Non-object FQ selector with custom unknown handler"
+  # ? [list [T create t] $methods(z) XXX] \
+  #     "CURRENT-::obj-DELEGATOR-::t-UNKNOWNMETHOD-XXX-PATH-::nsf::classes::T::z"
+  # T setObjectParams x:alias,method=$methods(z)
+  # ? {T create t XXX} "CURRENT-::obj-DELEGATOR-::t-UNKNOWNMETHOD-XXX-PATH-::nsf::classes::T::z" \
+  #     "Non-object FQ selector with default unknown handler"
+  # ::T mixin set UnknownHandler
+  # ? {T create t XXX} "CURRENT-::obj-DELEGATOR-::t-UNKNOWNMETHOD-XXX-PATH-::nsf::classes::T::z" \
+  #     "Non-object FQ selector with custom unknown handler"
 
   #
   # A Tcl proc is allowed?!

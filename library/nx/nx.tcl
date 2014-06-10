@@ -470,10 +470,11 @@ namespace eval ::nx {
       ::nsf::object::property [self] perobjectdispatch true
     }
     :protected method unknown {callInfo args} {
-      set path [lrange $callInfo 1 end-1]; # set path [current methodpath]
+      puts stderr ">>>>>>callInfo=$callInfo"
+      set path [lrange $callInfo 1 end-1]; #  set path [current methodpath]
       set m [lindex $callInfo end]
       set obj [lindex $callInfo 0]
-      #puts stderr "### [list $obj ::nsf::methods::object::info::lookupmethods -path \"$path *\"]"
+      puts stderr "### $obj ::nsf::methods::object::info::lookupmethods -path \"$path *\""
       if {[catch {set valid [$obj ::nsf::methods::object::info::lookupmethods -path "$path *"]} errorMsg]} {
 	set valid ""
 	puts stderr "+++ UNKNOWN raises error $errorMsg"
@@ -486,8 +487,11 @@ namespace eval ::nx {
       if {[catch {set obj [uplevel ::nsf::current]}]} {
 	error "ensemble dispatch called outside of method context"
       }
-      set path [lrange [::nsf::current methodpath] 0 end-1]
+      puts stderr ">>>>>>methodPath=[uplevel {::nsf::current methodpath}]"
+      ## set path [lrange [uplevel {::nsf::current methodpath}] 0 end-1]
+      set path [uplevel {::nsf::current methodpath}]
       set l [string length $path]
+      puts stderr "$obj ::nsf::methods::object::info::lookupmethods -path \"$path *\""
       set submethods [$obj ::nsf::methods::object::info::lookupmethods -path "$path *"]
       foreach sm $submethods {set results([lindex [string range $sm $l+1 end] 0]) 1}
       return -code error "valid submethods of $obj $path: [lsort [array names results]]"
