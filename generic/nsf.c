@@ -4306,6 +4306,7 @@ NsfMethodNamePath(Tcl_Interp *interp,
   assert(methodName);
 
   if (framePtr) {
+    fprintf(stderr,"---- NsfMethodNamePath starting frame %p\n", framePtr);
     Tcl_ListObjAppendList(interp, resultObj,
 			  CallStackMethodPath(interp, framePtr));
   }
@@ -12521,8 +12522,8 @@ ObjectCmdMethodDispatch(NsfObject *invokedObject, Tcl_Interp *interp, int objc, 
     Tcl_CallFrame *framePtr1;
     NsfCallStackContent *cscPtr1 = CallStackGetTopFrame(interp, &framePtr1);
 
-    /*fprintf(stderr, "call next instead of unknown %s.%s \n",
-      ObjectName(cscPtr->self), methodName);*/
+    fprintf(stderr, "call next instead of unknown %s.%s methodName %p cscPtr1 %p\n",
+            ObjectName(cscPtr->self), methodName, framePtr1, cscPtr1);
 
     assert(cscPtr1);
     if ((cscPtr1->frameType & NSF_CSC_TYPE_ENSEMBLE)) {
@@ -12544,11 +12545,11 @@ ObjectCmdMethodDispatch(NsfObject *invokedObject, Tcl_Interp *interp, int objc, 
 				 cscPtr1->objc, cscPtr1->objv, cscPtr1, 0);
 
 
-    /*fprintf(stderr, "==> next %s.%s (obj %s) csc %p returned %d unknown %d\n",
-      ObjectName(self), methodName, ObjectName(object), cscPtr, result,
-      RUNTIME_STATE(interp)->unknown); */
+    fprintf(stderr, "==> next %s.%s (obj %s) csc %p returned %d unknown %d framePtr1 %p cscPtr1 %p\n",
+      ObjectName(callerSelf), methodName, ObjectName(invokedObject), cscPtr, result,
+            RUNTIME_STATE(interp)->unknown, framePtr1, cscPtr1);
 
-    if (RUNTIME_STATE(interp)->unknown) {
+    if (RUNTIME_STATE(interp)->unknown /*&& ((cscPtr1->flags & NSF_CSC_CALL_IS_ENSEMBLE) == 0 || (cscPtr1->flags & NSF_CSC_IMMEDIATE) == 0)*/ /*&& (cscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) == 0*/) {
       /*
        * Unknown handling: We trigger a dispatch to an unknown method. The
        * appropriate unknown handler is either provided for the current
@@ -12568,9 +12569,11 @@ ObjectCmdMethodDispatch(NsfObject *invokedObject, Tcl_Interp *interp, int objc, 
       Tcl_ListObjAppendList(interp, callInfoObj, methodPathObj);
       Tcl_ListObjAppendElement(interp, callInfoObj, objv[1]);
 
-      /* fprintf(stderr, "DispatchUnknownMethod is called with callinfo <%s> \n", ObjStr(callInfoObj)); */
+      fprintf(stderr, "DispatchUnknownMethod is called with callinfo <%s> startFrame %p lastEl <%s> methodPathObj <%s>\n", ObjStr(callInfoObj), framePtr,  MethodName(objv[0]), ObjStr(methodPathObj));
+      NsfShowStack(interp);
       result = DispatchUnknownMethod(interp, invokedObject, objc-1, objv+1, callInfoObj,
 				     objv[1], NSF_CM_NO_OBJECT_METHOD|NSF_CSC_IMMEDIATE);
+      RUNTIME_STATE(interp)->unknown = 0;
       DECR_REF_COUNT(callInfoObj);
     }
   }
@@ -17472,8 +17475,8 @@ NextSearchAndInvoke(Tcl_Interp *interp, CONST char *methodName,
   result = NextSearchMethod(object, interp, cscPtr, &cl, &methodName, &cmd,
                             &isMixinEntry, &isFilterEntry, &endOfFilterChain, &currentCmd);
 
-  /*fprintf(stderr, "NEXT search on %s.%s cl %p cmd %p endOfFilterChain %d result %d IS OK %d\n",
-    ObjectName(object), methodName, cl, cmd, endOfFilterChain, result, (result == TCL_OK));*/
+  fprintf(stderr, "NEXT search on %s.%s cl %p cmd %p endOfFilterChain %d result %d IS OK %d isMixinEntry %d\n",
+          ObjectName(object), methodName, cl, cmd, endOfFilterChain, result, (result == TCL_OK), isMixinEntry);
 
   if (unlikely(result != TCL_OK)) {
     goto next_search_and_invoke_cleanup;
@@ -17555,6 +17558,7 @@ NextSearchAndInvoke(Tcl_Interp *interp, CONST char *methodName,
 #endif
   } else if (likely(result == TCL_OK)) {
     NsfCallStackContent *topCscPtr;
+    Tcl_CallFrame *framePtr;
     int isLeafNext;
 
     /*
@@ -17574,17 +17578,29 @@ NextSearchAndInvoke(Tcl_Interp *interp, CONST char *methodName,
      * for dispatching to unknown.
      */
 
-    topCscPtr = CallStackGetTopFrame(interp, NULL);
+    /* frameType 0000 flags 000104 */
+    /* frameType 0000 flags 000104 */
+
+    topCscPtr = CallStackGetTopFrame(interp, NULL) ;
+    /*if ((cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE)) {
+      topCscPtr = NsfCallStackFindLastInvocation(interp, 0, NULL);
+      }*/
+
     assert(topCscPtr);
 
     /* case 2 */
-    isLeafNext = (cscPtr != topCscPtr) && (topCscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) &&
+    isLeafNext = topCscPtr && (cscPtr != topCscPtr) && (topCscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) &&
       (topCscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) == 0;
+
+    NsfShowStack(interp);
+    fprintf(stderr, "!!!!!! isLeafNext --- %d cscPtr %p topCscPtr %p NSF_CSC_TYPE_ENSEMBLE %d NSF_CSC_CALL_IS_ENSEMBLE %d last-leaf (non-next) frame %p\n", isLeafNext, cscPtr, 
+            topCscPtr, topCscPtr ? (topCscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) != 0 : NULL, 
+            topCscPtr ? (topCscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) != 0 : NULL, NsfCallStackFindLastInvocation(interp, 0, NULL));
 
     rst->unknown = /* case 1 */ endOfFilterChain ||
       /* case 3 */ (!isLeafNext && (cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE));
 
-    /*fprintf(stderr, "******** setting unknown to %d\n",  rst->unknown );*/
+    fprintf(stderr, "******** setting unknown to %d\n",  rst->unknown );
   }
 
  next_search_and_invoke_cleanup:

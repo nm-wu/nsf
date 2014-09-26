@@ -471,6 +471,7 @@ namespace eval ::nx {
     }
     :protected method unknown {callInfo args} {
       set path [lrange $callInfo 1 end-1]
+      ## set path $callInfo
       set m [lindex $callInfo end]
       set obj [lindex $callInfo 0]
       ::nsf::__db_show_stack
@@ -840,7 +841,7 @@ namespace eval ::nx {
   }
 
   ######################################################################
-  # Define "info info" and "info unknown"
+  # Define "info info"
   ######################################################################
 
   proc ::nx::internal::infoOptions {obj} {
@@ -853,10 +854,10 @@ namespace eval ::nx {
     return "valid options are: [join [lsort $methods] {, }]"
   }
 
-  Object protected method "info unknown" {method obj:object args} {
-    return -code error \
-	"[::nsf::self] unknown info option \"$method\"; [$obj info info]"
-  }
+  # Object protected method "info unknown" {method obj:object args} {
+  #   return -code error \
+  #       "[::nsf::self] unknown info option \"$method\"; [$obj info info]"
+  # }
 
   Object method "info info" {} {::nx::internal::infoOptions ::nx::Object::slot::__info}
   Class  method "info info" {} {::nx::internal::infoOptions ::nx::Class::slot::__info}

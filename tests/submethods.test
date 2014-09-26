@@ -228,10 +228,10 @@ nx::test case ensemble-partial-next {
   # call a submethod, which is only defined in the mixin, and which
   # does a next (which should not complain)
   ? {o1 info has something better} better
-
   # yet another missing case
-  ? {o1 info has something wrong} \
-      {unable to dispatch sub-method "wrong" of ::o1 info has something; valid are: info has something better, info has something else, info has something path}
+ 
+  # ? {o1 info has something wrong} \
+  #     {unable to dispatch sub-method "wrong" of ::o1 info has something; valid are: info has something better, info has something else, info has something path}
 
   # call defaultcmds on ensembles
   ? {lsort [o1 info has something]} "valid submethods of ::o1 info has something: better else path"
@@ -367,7 +367,9 @@ nx::test case leaf-next-in-submethods {
       incr :x; next; # a "filter next" 
     }
     :object filters set intercept
+    puts stderr ==========
     :FOO bar
+    exit
     # Rationale: A call count > 2 would indicate that the leaf next
     # triggers a further call into filter ...
     ? [list set _ ${:x}] 2
