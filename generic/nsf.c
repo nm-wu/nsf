@@ -13815,7 +13815,7 @@ ObjectDispatch(ClientData clientData, Tcl_Interp *interp,
   }
 
   assert(result == TCL_OK);
-
+  fprintf(stderr, "... cmd %p\n", cmd);
   if (likely(cmd != NULL)) {
     /*
      * We found the method to dispatch.
@@ -13846,9 +13846,9 @@ ObjectDispatch(ClientData clientData, Tcl_Interp *interp,
       cscPtr->objv = objv+shift;
     }
 
-    /*fprintf(stderr, "MethodDispatchCsc %s.%s %p flags %.6x cscPtr %p\n",
+    fprintf(stderr, "MethodDispatchCsc %s.%s %p flags %.6x cscPtr %p\n",
             ObjectName(object), methodName, object->mixinStack, cscPtr->flags,
-            cscPtr);*/
+            cscPtr);
 
     result = MethodDispatchCsc(clientData, interp, objc-shift, objv+shift,
                                resolvedCmd, cscPtr, methodName, &isValidCsc);
@@ -27754,11 +27754,12 @@ ComputeParameterDefinition(Tcl_Interp *interp, Tcl_Obj *procNameObj,
   } else {
     assert(class != NULL);
     self = &class->object;
+    fprintf(stderr, "c_configureparameter obj %s (%s)\n", ObjectName(self), ClassName(class));
     methodObj = NsfMethodObj(self, NSF_c_configureparameter_idx);
   }
 
   if (methodObj != NULL) {
-    /*fprintf(stderr, "calling %s %s\n", ObjectName(self), ObjStr(methodObj));*/
+    fprintf(stderr, "calling %s %s\n", ObjectName(self), ObjStr(methodObj));
     result = CallMethod(self, interp, methodObj, 2, NULL,
                         NSF_CM_IGNORE_PERMISSIONS|NSF_CSC_IMMEDIATE);
 
@@ -27862,12 +27863,14 @@ GetObjectParameterDefinition(Tcl_Interp *interp, Tcl_Obj *procNameObj,
     parsedParamPtr->paramDefs = clParsedParamPtr->paramDefs;
     parsedParamPtr->possibleUnknowns = clParsedParamPtr->possibleUnknowns;
     result = TCL_OK;
+    fprintf(stderr, "11111 class reuse obj param for obj %s (%s)\n", ObjectName(object), ClassName(class));
 
 #if defined(PER_OBJECT_PARAMETER_CACHING)
   } else if (object != NULL && object->opt != NULL && object->opt->parsedParamPtr != NULL &&
              object->opt->classParamPtrEpoch == RUNTIME_STATE(interp)->classParamPtrEpoch) {
     NsfParsedParam *objParsedParamPtr = object->opt->parsedParamPtr;
 
+    fprintf(stderr, "22222 obj reuse obj param for obj %s\n", ObjectName(object));
     /*fprintf(stderr, "reuse obj param for obj %p  %s paramPtr %p\n",
       (void *)object, ObjectName(object), (void *)objParsedParamPtr);*/
     parsedParamPtr->paramDefs = objParsedParamPtr->paramDefs;
@@ -27876,6 +27879,7 @@ GetObjectParameterDefinition(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 #endif
 
   } else {
+    fprintf(stderr, "33333 no cache %s\n", ObjectName(object));
     /*
      * There is no parameter definition available, get a new one in
      * the the string representation.

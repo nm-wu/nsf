@@ -1539,10 +1539,12 @@ namespace eval ::nx {
   ######################################################################
 
   Object protected method __object_configureparameter {} {
+    puts stderr ---here1
     set slotObjects [nsf::directdispatch [self] ::nsf::methods::object::info::lookupslots -type ::nx::Slot]
     return [::nsf::parameter::specs $slotObjects]
   }
   Class protected method __class_configureparameter {} {
+    puts stderr ---here2
     set slotObjects [nsf::directdispatch [self] ::nsf::methods::class::info::slotobjects -closure -type ::nx::Slot]
     return [::nsf::parameter::specs $slotObjects]
   }
