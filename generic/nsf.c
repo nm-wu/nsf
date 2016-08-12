@@ -2391,8 +2391,119 @@ NsfClassListUnlink(NsfClasses **firstPtrPtr, const void *key) {
 enum colors { WHITE, GRAY, BLACK };
 typedef enum { SUPER_CLASSES, SUB_CLASSES } ClassDirection;
 
+#define ComputeTransitiveSubclasses(cl) \
+  TopoSort2((cl), SUB_CLASSES , NULL, 0, NULL)
+
+#define ComputeDependentSubclasses(cl) \
+  TopoSort2((cl), SUB_CLASSES , NULL, 1, NULL)
+
+#define ComputerTransitiveSuperclasses(cl) \
+  TopoSort2((cl), SUPER_CLASSES , NULL, 0, NULL)
+
+static void TopoSort2(NsfClass *cl,
+                     ClassDirection direction,
+                     NsfClass *baseClass,
+                     int withMixinOfs,
+                     int *hasCycle)
+  nonnull(1);
+
 static int TopoSort(NsfClass *cl, NsfClass *baseClass, ClassDirection direction, int withMixinOfs)
   nonnull(1) nonnull(2);
+
+static void
+TopoSort2(NsfClass *cl,
+          ClassDirection direction,
+          NsfClass *baseClass,
+          int withMixinOfs,
+          int *hasCycle) {
+  NsfClasses *sl, *pl;
+  int foundCycle = 0;
+  
+  nonnull_assert(cl != NULL);
+
+  if (baseClass == NULL) {
+    baseClass = cl;
+  }
+  
+  sl = direction == SUPER_CLASSES ? cl->super : cl->sub;
+
+  /*
+   * Be careful to reset the color of unreported classes to
+   * white in case we unwind with error, and on final exit
+   * reset color of reported classes to WHITE. Meaning of colors:
+   *
+   *     WHITE ... not processed
+   *     GRAY  ... in work
+   *     BLACK ... done
+   */
+
+  cl->color = GRAY;
+  
+  for (; sl != NULL && sl->cl != NULL; sl = sl->nextPtr) {
+    NsfClass *sc = sl->cl;
+    
+    if (sc->color == GRAY) {
+      foundCycle = 1;
+      goto done;
+    }
+    
+    if (sc->color == WHITE) {
+      TopoSort2(sc, direction, baseClass, withMixinOfs, &foundCycle);
+      if (foundCycle) {
+#if defined(NDEBUG)
+        NsfLog(sc->object.teardown, NSF_LOG_WARN,
+               "cyclic %s graph detected for class %s",
+               direction == SUB_CLASSES ? "subclass" : "superclass",
+               ClassName_(sc));
+#endif
+        goto done;
+      }
+    }
+  }
+
+  if (withMixinOfs != 0) {
+    NsfCmdList *classMixins = ((cl->opt != NULL) && cl->opt->isClassMixinOf) ? cl->opt->isClassMixinOf : NULL;
+
+    for (; classMixins != NULL; classMixins = classMixins->nextPtr) {
+      NsfClass *sc = NsfGetClassFromCmdPtr(classMixins->cmdPtr);
+
+      if (likely(sc != NULL) && sc->color == WHITE) {
+        TopoSort2(sc, direction, baseClass, withMixinOfs, &foundCycle);
+        if (foundCycle) {
+#if defined(NDEBUG)
+          NsfLog(sc->object.teardown, NSF_LOG_WARN,
+                 "cyclic mixin graph detected for class %s",
+                 ClassName_(sc));
+#endif
+          goto done;
+        }
+
+      }
+    }
+  }
+
+ done:
+
+  assert(!foundCycle);
+  
+  cl->color = BLACK;
+  pl = NEW(NsfClasses);
+  pl->cl = cl;
+  pl->nextPtr = baseClass->order;
+  baseClass->order = pl;
+  
+  if (hasCycle != NULL) {
+    *hasCycle = foundCycle;
+  }
+  
+  /* mark all nodes WHITE iff at the root */
+  if (unlikely(cl == baseClass)) {
+    register NsfClasses *pc;
+    for (pc = cl->order; pc; pc = pc->nextPtr) { pc->cl->color = WHITE; }
+    assert(baseClass->order != NULL);
+  }
+}
+
 
 static int
 TopoSort(NsfClass *cl, NsfClass *baseClass, ClassDirection direction, int withMixinOfs) {
@@ -2965,14 +3076,14 @@ PrecedenceOrder(NsfClass *cl) {
  *----------------------------------------------------------------------
  */
 
-NSF_INLINE static NsfClasses * TransitiveSubClasses(NsfClass *cl) nonnull(1);
+NSF_INLINE static NsfClasses * TransitiveSubClasses(NsfClass *cl)
+  nonnull(1) returns_nonnull; 
 
 NSF_INLINE static NsfClasses *
 TransitiveSubClasses(NsfClass *cl) {
   NsfClasses *order, *savedOrder;
 
   nonnull_assert(cl != NULL);
-
   /*
    * Since TopoSort() places its result in cl->order, we have to save the old
    * cl->order, perform the computation and restore the old order.
@@ -2980,22 +3091,14 @@ TransitiveSubClasses(NsfClass *cl) {
   savedOrder = cl->order;
   cl->order = NULL;
 
-  if (likely(TopoSort(cl, cl, SUB_CLASSES, 0))) {
-    order = cl->order;
-  } else {
-    if (cl->order != NULL) {
-      NsfClassListFree(cl->order);
-    }
-    order = NULL;
-  }
+  ComputeTransitiveSubclasses(cl);
+  order = cl->order;
 
-  /*
-   * TODO: if this holds, we can change the fn to returns_nonnull and the else-branch is not needed
-   */
-  assert(order != NULL);
   AssertOrderIsWhite(order);
 
   cl->order = savedOrder;
+
+  assert(order != NULL);
   return order;
 }
 
@@ -3015,38 +3118,30 @@ TransitiveSubClasses(NsfClass *cl) {
  *
  *----------------------------------------------------------------------
  */
-NSF_INLINE static NsfClasses *DependentSubClasses(NsfClass *cl) nonnull(1);
+NSF_INLINE static NsfClasses *DependentSubClasses(NsfClass *cl)
+  nonnull(1) returns_nonnull;
 
 NSF_INLINE static NsfClasses *
 DependentSubClasses(NsfClass *cl) {
   NsfClasses *order, *savedOrder;
 
   nonnull_assert(cl != NULL);
-
+  
   /*
    * Since TopoSort() places its result in cl->order, we have to save the old
    * cl->order, perform the computation and restore the old order.
    */
   savedOrder = cl->order;
   cl->order = NULL;
-
-  if (likely(TopoSort(cl, cl, SUB_CLASSES, 1))) {
-    order = cl->order;
-  } else {
-    if (cl->order != NULL) {
-      NsfClassListFree(cl->order);
-    }
-    order = NULL;
-  }
-
-  /*
-   * TODO: if this holds, we can change the fn to returns_nonnull and the else-branch is not needed
-   */
-
-  assert(order != NULL);
+  
+  ComputeDependentSubclasses(cl);
+  order = cl->order;
+  
   AssertOrderIsWhite(order);
-
+  
   cl->order = savedOrder;
+  
+  assert(order != NULL);
   return order;
 }
 
