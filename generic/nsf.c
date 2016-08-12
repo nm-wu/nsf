@@ -2467,6 +2467,8 @@ TopoSort2(NsfClass *cl,
     for (; classMixins != NULL; classMixins = classMixins->nextPtr) {
       NsfClass *sc = NsfGetClassFromCmdPtr(classMixins->cmdPtr);
 
+      /* TODO: Why is here no sc->color == GRAY shortcut? */
+      
       if (likely(sc != NULL) && sc->color == WHITE) {
         TopoSort2(sc, direction, baseClass, withMixinOfs, &foundCycle);
         if (foundCycle) {
