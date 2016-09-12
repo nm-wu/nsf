@@ -407,6 +407,9 @@ static NsfClasses ** NsfClassListAdd(NsfClasses **firstPtrPtr, NsfClass *cl, Cli
 static int SetInstVar(Tcl_Interp *interp, NsfObject *object, Tcl_Obj *nameObj, Tcl_Obj *valueObj, unsigned int flags)
   nonnull(1) nonnull(2) nonnull(3);
 
+static int UnsetInstVar(Tcl_Interp *interp, int withNocomplain, NsfObject *object, const char *name)
+  nonnull(1) nonnull(3) nonnull(4);
+
 static int ListDefinedMethods(Tcl_Interp *interp, NsfObject *object, const char *pattern,
                               int withPer_object, int methodType, int withCallproctection,
                               int withPath)
@@ -5648,6 +5651,83 @@ NSDeleteChildren(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
   }
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ * NsfDeleteVars --
+ *
+ *    Delete the object variables and the variable table.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Triggers unset traces.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void NsfDeleteVars(Tcl_Interp *interp, NsfObject *object) nonnull(1) nonnull(2);
+
+void
+NsfDeleteVars(
+    Tcl_Interp *interp,  /* Interpreter to which object belongs. */
+    NsfObject *object)  /* Object to which variables belong. */
+{
+    Tcl_HashSearch search;
+    int flags;
+    Interp *iPtr = (Interp *) interp;
+    Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+    Tcl_HashEntry *entryPtr;
+    TclVarHashTable *varTablePtr;
+
+    varTablePtr = (object->nsPtr != NULL) ?
+      Tcl_Namespace_varTablePtr(object->nsPtr) :
+      object->varTablePtr;
+
+
+    /*
+     * Determine what flags to pass to the trace callback functions.
+     */
+
+    // flags = TCL_TRACE_UNSETS;
+
+    for (entryPtr = Tcl_FirstHashEntry((Tcl_HashTable *)varTablePtr, &search);
+         entryPtr != NULL;
+         entryPtr = Tcl_NextHashEntry(&search)) {
+      Tcl_Obj *nameObj;
+      Var *varPtr;
+      GetVarAndNameFromHash(entryPtr, &varPtr, &nameObj);
+      if (TclIsVarTraced(varPtr)) {
+        UnsetInstVar(interp, 0, object, ObjStr(nameObj));
+      
+        /*   Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
+        VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
+        ActiveVarTrace *activePtr;
+        
+        while (tracePtr) {
+          VarTrace *prevPtr = tracePtr;
+          
+          tracePtr = tracePtr->nextPtr;
+          prevPtr->nextPtr = NULL;
+          Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
+        }
+        Tcl_DeleteHashEntry(tPtr);
+        varPtr->flags &= ~VAR_ALL_TRACES;
+        for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
+             activePtr = activePtr->nextPtr) {
+          if (activePtr->varPtr == varPtr) {
+            activePtr->nextTracePtr = NULL;
+          }
+        }
+        */
+      }
+    }
+
+    TclDeleteVars(iPtr, varTablePtr);
+
+}
+
 /*
  * delete all vars & procs in a namespace
  */
@@ -5672,6 +5752,7 @@ NSCleanupNamespace(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
    * (DeleteVars frees the var-table)
    */
   TclDeleteVars((Interp *)interp, varTablePtr);
+  //NsfDeleteVars(interp, object);
   TclInitVarHashTable(varTablePtr, (Namespace *)nsPtr);
 
   /*
@@ -18489,7 +18570,8 @@ CleanupDestroyObject(Tcl_Interp *interp, NsfObject *object, int softrecreate) {
   }
 
   if (object->varTablePtr != NULL) {
-    TclDeleteVars(((Interp *)interp), object->varTablePtr);
+    //TclDeleteVars(((Interp *)interp), object->varTablePtr);
+    NsfDeleteVars(interp, object);
 
     ckfree((char *)object->varTablePtr);
     /*FREE(obj->varTablePtr, obj->varTablePtr);*/
@@ -20184,8 +20266,6 @@ SetInstArray(Tcl_Interp *interp, NsfObject *object, Tcl_Obj *arrayNameObj, Tcl_O
  *
  *----------------------------------------------------------------------
  */
-static int UnsetInstVar(Tcl_Interp *interp, int withNocomplain, NsfObject *object, const char *name)
-  nonnull(1) nonnull(3) nonnull(4);
 
 static int
 UnsetInstVar(Tcl_Interp *interp, int withNocomplain, NsfObject *object, const char *name) {
