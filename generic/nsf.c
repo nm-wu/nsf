@@ -5685,47 +5685,27 @@ NsfDeleteVars(
       Tcl_Namespace_varTablePtr(object->nsPtr) :
       object->varTablePtr;
 
-
-    /*
-     * Determine what flags to pass to the trace callback functions.
-     */
-
-    // flags = TCL_TRACE_UNSETS;
-
-    for (entryPtr = Tcl_FirstHashEntry((Tcl_HashTable *)varTablePtr, &search);
-         entryPtr != NULL;
-         entryPtr = Tcl_NextHashEntry(&search)) {
-      Tcl_Obj *nameObj;
-      Var *varPtr;
-      GetVarAndNameFromHash(entryPtr, &varPtr, &nameObj);
-      if (TclIsVarTraced(varPtr)) {
-        UnsetInstVar(interp, 0, object, ObjStr(nameObj));
+    if (varTablePtr != NULL) {
+      for (entryPtr = Tcl_FirstHashEntry((Tcl_HashTable *)varTablePtr, &search);
+           entryPtr != NULL;
+           entryPtr = Tcl_NextHashEntry(&search)) {
+        Tcl_Obj *nameObj;
+        Var *varPtr;
+        GetVarAndNameFromHash(entryPtr, &varPtr, &nameObj);
+        if (TclIsVarTraced(varPtr)) {
+          UnsetInstVar(interp, 0, object, ObjStr(nameObj));
+        }
+      }
       
-        /*   Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
-        VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
-        ActiveVarTrace *activePtr;
-        
-        while (tracePtr) {
-          VarTrace *prevPtr = tracePtr;
-          
-          tracePtr = tracePtr->nextPtr;
-          prevPtr->nextPtr = NULL;
-          Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
-        }
-        Tcl_DeleteHashEntry(tPtr);
-        varPtr->flags &= ~VAR_ALL_TRACES;
-        for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
-             activePtr = activePtr->nextPtr) {
-          if (activePtr->varPtr == varPtr) {
-            activePtr->nextTracePtr = NULL;
-          }
-        }
-        */
+      TclDeleteVars(iPtr, varTablePtr);
+      
+      if (object->nsPtr != NULL) {
+        TclInitVarHashTable(varTablePtr, (Namespace *)object->nsPtr);
+      } else {
+        ckfree((char *)object->varTablePtr);
+        object->varTablePtr = 0;
       }
     }
-
-    TclDeleteVars(iPtr, varTablePtr);
-
 }
 
 /*
@@ -5751,9 +5731,9 @@ NSCleanupNamespace(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
    * Delete all variables and initialize var table again
    * (DeleteVars frees the var-table)
    */
-  TclDeleteVars((Interp *)interp, varTablePtr);
-  //NsfDeleteVars(interp, object);
-  TclInitVarHashTable(varTablePtr, (Namespace *)nsPtr);
+  // TclDeleteVars((Interp *)interp, varTablePtr);
+  // NsfDeleteVars(interp, object);
+  // TclInitVarHashTable(varTablePtr, (Namespace *)nsPtr);
 
   /*
    * Delete all user-defined procs in the namespace
@@ -18564,19 +18544,21 @@ CleanupDestroyObject(Tcl_Interp *interp, NsfObject *object, int softrecreate) {
     }
   }
 
+  NsfDeleteVars(interp, object);
+  
   if (object->nsPtr != NULL) {
     NSCleanupNamespace(interp, object->nsPtr);
     NSDeleteChildren(interp, object->nsPtr);
   }
-
-  if (object->varTablePtr != NULL) {
+  
+  /* if (object->varTablePtr != NULL) {
     //TclDeleteVars(((Interp *)interp), object->varTablePtr);
     NsfDeleteVars(interp, object);
 
     ckfree((char *)object->varTablePtr);
-    /*FREE(obj->varTablePtr, obj->varTablePtr);*/
+    // FREE(obj->varTablePtr, obj->varTablePtr);
     object->varTablePtr = 0;
-  }
+    }*/
 
   if (object->opt != NULL) {
     NsfObjectOpt *opt = object->opt;
@@ -19240,6 +19222,7 @@ CleanupDestroyClass(Tcl_Interp *interp, NsfClass *cl, int softrecreate, int recr
 #endif
   }
 
+  NsfDeleteVars(interp, &cl->object);
   NSCleanupNamespace(interp, cl->nsPtr);
   NSDeleteChildren(interp, cl->nsPtr);
 
