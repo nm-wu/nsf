@@ -5656,20 +5656,30 @@ NSDeleteChildren(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
  *----------------------------------------------------------------------
  * UnsetTracedVars --
  *
- *    Delete the object variables and the variable table.
+ *   This is a helper function which, as a first pass, attempts to unset
+ *   traced object variables before TclDeleteVars() performs a second pass
+ *   This two-pass deletion of object variables is necessary because an unset
+ *   trace may bring back the object variable currently being deleted. A
+ *   single pass risks leaking revived Var structures. TclDeleteVars()
+ *   requires variables under deletion to be untraced.
+ *
+ *   As Tcl does not provide access to the neccessary lower-level Var API to
+ *   extensions (ideally: TclDeleteNamespaceVars or TclPtrUnsetVar), we resort
+ *   to a mix of navigating the variable table and calling high-level unset
+ *   operations (UnsetInstVar).
  *
  * Results:
  *    None.
  *
  * Side effects:
- *    Triggers unset traces.
+ *    Triggers the unset traces, if any.
  *
  *----------------------------------------------------------------------
  */
 
 static void UnsetTracedVars(Tcl_Interp *interp, NsfObject *object) nonnull(1) nonnull(2);
 
-void
+static void
 UnsetTracedVars(
     Tcl_Interp *interp,  /* Interpreter to which object belongs. */
     NsfObject *object)  /* Object to which variables belong. */
