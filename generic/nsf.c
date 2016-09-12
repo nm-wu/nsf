@@ -407,6 +407,9 @@ static NsfClasses ** NsfClassListAdd(NsfClasses **firstPtrPtr, NsfClass *cl, Cli
 static int SetInstVar(Tcl_Interp *interp, NsfObject *object, Tcl_Obj *nameObj, Tcl_Obj *valueObj, unsigned int flags)
   nonnull(1) nonnull(2) nonnull(3);
 
+static int UnsetInstVar(Tcl_Interp *interp, int withNocomplain, NsfObject *object, const char *name)
+  nonnull(1) nonnull(3) nonnull(4);
+
 static int ListDefinedMethods(Tcl_Interp *interp, NsfObject *object, const char *pattern,
                               int withPer_object, int methodType, int withCallproctection,
                               int withPath)
@@ -5646,6 +5649,51 @@ NSDeleteChildren(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
     expected = cmdTablePtr->numEntries -
       NSDeleteChild(interp, (Tcl_Command)Tcl_GetHashValue(hPtr), 0);
   }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * UnsetTracedVars --
+ *
+ *    Delete the object variables and the variable table.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Triggers unset traces.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void UnsetTracedVars(Tcl_Interp *interp, NsfObject *object) nonnull(1) nonnull(2);
+
+void
+UnsetTracedVars(
+    Tcl_Interp *interp,  /* Interpreter to which object belongs. */
+    NsfObject *object)  /* Object to which variables belong. */
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *entryPtr;
+    TclVarHashTable *varTablePtr;
+
+    varTablePtr = (object->nsPtr != NULL) ?
+      Tcl_Namespace_varTablePtr(object->nsPtr) :
+      object->varTablePtr;
+
+    if (varTablePtr != NULL) {
+      for (entryPtr = Tcl_FirstHashEntry((Tcl_HashTable *)varTablePtr, &search);
+           entryPtr != NULL;
+           entryPtr = Tcl_NextHashEntry(&search)) {
+        Tcl_Obj *nameObj;
+        Var *varPtr;
+        GetVarAndNameFromHash(entryPtr, &varPtr, &nameObj);
+        if ((varPtr->flags & VAR_TRACED_UNSET) != 0u /* TclIsVarTraced(varPtr) */) {
+          (void)UnsetInstVar(interp, 1 /* no error msg */, object, ObjStr(nameObj));
+        }
+      }
+    }
 }
 
 /*
@@ -18483,6 +18531,8 @@ CleanupDestroyObject(Tcl_Interp *interp, NsfObject *object, int softrecreate) {
     }
   }
 
+  UnsetTracedVars(interp, object);
+  
   if (object->nsPtr != NULL) {
     NSCleanupNamespace(interp, object->nsPtr);
     NSDeleteChildren(interp, object->nsPtr);
@@ -20184,8 +20234,6 @@ SetInstArray(Tcl_Interp *interp, NsfObject *object, Tcl_Obj *arrayNameObj, Tcl_O
  *
  *----------------------------------------------------------------------
  */
-static int UnsetInstVar(Tcl_Interp *interp, int withNocomplain, NsfObject *object, const char *name)
-  nonnull(1) nonnull(3) nonnull(4);
 
 static int
 UnsetInstVar(Tcl_Interp *interp, int withNocomplain, NsfObject *object, const char *name) {
