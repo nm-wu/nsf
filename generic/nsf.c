@@ -5691,6 +5691,7 @@ UnsetTracedVars(
     Tcl_HashSearch search;
     Tcl_HashEntry *entryPtr;
     TclVarHashTable *varTablePtr;
+    Interp *iPtr = (Interp *)interp;
 
     varTablePtr = (object->nsPtr != NULL) ?
       Tcl_Namespace_varTablePtr(object->nsPtr) :
@@ -5703,9 +5704,32 @@ UnsetTracedVars(
         Tcl_Obj *nameObj;
         Var *varPtr;
         GetVarAndNameFromHash(entryPtr, &varPtr, &nameObj);
+        VarHashRefCount(varPtr)++;
         if ((varPtr->flags & VAR_TRACED_UNSET) != 0u /* TclIsVarTraced(varPtr) */) {
           (void)UnsetInstVar(interp, 1 /* no error msg */, object, ObjStr(nameObj));
         }
+        if (TclIsVarTraced(varPtr)) {
+          Tcl_HashEntry *tPtr = Tcl_FindHashEntry(&iPtr->varTraces, varPtr);
+          VarTrace *tracePtr = Tcl_GetHashValue(tPtr);
+          ActiveVarTrace *activePtr;
+          
+          while (tracePtr) {
+            VarTrace *prevPtr = tracePtr;
+            
+            tracePtr = tracePtr->nextPtr;
+            prevPtr->nextPtr = NULL;
+            Tcl_EventuallyFree(prevPtr, TCL_DYNAMIC);
+          }
+          Tcl_DeleteHashEntry(tPtr);
+          varPtr->flags &= ~VAR_ALL_TRACES;
+          for (activePtr = iPtr->activeVarTracePtr; activePtr != NULL;
+               activePtr = activePtr->nextPtr) {
+            if (activePtr->varPtr == varPtr) {
+              activePtr->nextTracePtr = NULL;
+            }
+          }
+        }
+        VarHashRefCount(varPtr)--;
       }
     }
 }
