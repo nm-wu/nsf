@@ -5657,16 +5657,20 @@ NSDeleteChildren(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
  * UnsetTracedVars --
  *
  *   This is a helper function which, as a first pass, attempts to unset
- *   traced object variables before TclDeleteVars() performs a second pass
+ *   traced object variables before TclDeleteVars() performs a second pass.
  *   This two-pass deletion of object variables is necessary because an unset
- *   trace may bring back the object variable currently being deleted. A
- *   single pass risks leaking revived Var structures. TclDeleteVars()
+ *   trace might bring back the object variable currently being deleted. A
+ *   single pass risks leaking so-revived Var structures. TclDeleteVars()
  *   requires variables under deletion to be untraced.
  *
  *   As Tcl does not provide access to the neccessary lower-level Var API to
  *   extensions (ideally: TclDeleteNamespaceVars or TclPtrUnsetVar), we resort
  *   to a mix of navigating the variable table and calling high-level unset
  *   operations (UnsetInstVar).
+ *
+ *   With the fix to ticket http://core.tcl.tk/tcl/info/4dbdd9af144dbdd9af14,
+ *   Tcl itself provides for two deletion passes for namespace variables (see
+ *   TclDeleteNamespaceVars).
  *
  * Results:
  *    None.
@@ -5706,9 +5710,27 @@ UnsetTracedVars(
     }
 }
 
+
 /*
- * delete all vars & procs in a namespace
+ *----------------------------------------------------------------------
+ * NSCleanupNamespace --
+ *
+ *   Cleans up an object or class namespace by deleting 1) its variables, 2)
+ *   resetting the var table, and 3) deleting user-defined namespace procs.
+ *
+ *   For namespaces holding variables with possible unset traces, make sure
+ *   that UnsetTracedVars is called just before NSCleanupNamespace().
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects: 
+ *    Re-initializes the variable table of the cleaned-up namespace
+ *    (TclInitVarHashTable).
+ *
+ *----------------------------------------------------------------------
  */
+
 static void NSCleanupNamespace(Tcl_Interp *interp, Tcl_Namespace *nsPtr) nonnull(1) nonnull(2);
 
 static void
@@ -5727,7 +5749,7 @@ NSCleanupNamespace(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
 #endif
   /*
    * Delete all variables and initialize var table again
-   * (DeleteVars frees the var-table)
+   * (TclDeleteVars frees the var table).
    */
   TclDeleteVars((Interp *)interp, varTablePtr);
   TclInitVarHashTable(varTablePtr, (Namespace *)nsPtr);
@@ -18541,6 +18563,7 @@ CleanupDestroyObject(Tcl_Interp *interp, NsfObject *object, int softrecreate) {
     }
   }
 
+  /* Unset object variables with unset traces pre-emptively. */ 
   UnsetTracedVars(interp, object);
   
   if (object->nsPtr != NULL) {
