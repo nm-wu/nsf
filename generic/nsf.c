@@ -5748,8 +5748,9 @@ NSCleanupNamespace(Tcl_Interp *interp, Tcl_Namespace *nsPtr) {
   fprintf(stderr, "NSCleanupNamespace %p %.6x varTablePtr %p\n", nsPtr, ((Namespace *)nsPtr)->flags, varTablePtr);
 #endif
   /*
-   * Delete all variables and initialize var table again
-   * (TclDeleteVars frees the var table).
+   * Delete all variables and initialize var table again (TclDeleteVars frees
+   * the var table). Any unset-traced variable has been deleted before
+   * (UnsetTracedVars).
    */
   TclDeleteVars((Interp *)interp, varTablePtr);
   TclInitVarHashTable(varTablePtr, (Namespace *)nsPtr);
@@ -18572,6 +18573,8 @@ CleanupDestroyObject(Tcl_Interp *interp, NsfObject *object, int softrecreate) {
   }
 
   if (object->varTablePtr != NULL) {
+    /* Any unset-traced variable has been deleted before
+       (UnsetTracedVars) */
     TclDeleteVars(((Interp *)interp), object->varTablePtr);
 
     ckfree((char *)object->varTablePtr);
