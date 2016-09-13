@@ -5704,9 +5704,9 @@ UnsetTracedVars(
         Tcl_Obj *nameObj;
         Var *varPtr;
         GetVarAndNameFromHash(entryPtr, &varPtr, &nameObj);
-        VarHashRefCount(varPtr)++;
         if ((varPtr->flags & VAR_TRACED_UNSET) != 0u /* TclIsVarTraced(varPtr) */) {
 
+          VarHashRefCount(varPtr)++;
           (void)UnsetInstVar(interp, 1 /* no error msg */, object, ObjStr(nameObj));
 
           /* The variable might have been brought back by an unset trace, plus
@@ -5732,8 +5732,8 @@ UnsetTracedVars(
               }
             }
           }
+          VarHashRefCount(varPtr)--;
         }
-        VarHashRefCount(varPtr)--;
       }
     }
 }
