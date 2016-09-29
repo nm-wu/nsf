@@ -14207,14 +14207,22 @@ DispatchUnknownMethod(Tcl_Interp *interp, NsfObject *object,
 
   } else { /* no unknown called, this is the built-in unknown handler */
     Tcl_Obj *tailMethodObj = NULL;
-
+    fprintf(stderr, "UNKNOWN objv[1] %s\n", ObjStr(objv[1]));
     if (objc > 1 && ((*methodName) == '-' || (unknownObj && objv[0] == unknownObj))) {
       int length;
-      if (Tcl_ListObjLength(interp, objv[1], &length) == TCL_OK && length > 0) {
-        Tcl_ListObjIndex(interp, objv[1], length - 1, &tailMethodObj);
+      if (Tcl_ListObjLength(interp, objv[1], &length) == TCL_OK) {
+        if (length > 1) {
+          Tcl_ListObjIndex(interp, objv[1], length - 1, &tailMethodObj);
+        } else {
+          tailMethodObj = objv[1];
+        }
+      } else {
+        /* The first ("method") argument to unknown is an invalid list, yet a valid message */
+        fprintf(stderr, "UNKNOWN2 objv[1] %s\n", ObjStr(objv[1]));
+        tailMethodObj = objv[1];
       }
     }
-
+    fprintf(stderr, "tail %s MethodName(tail) %s\n", ObjStr(tailMethodObj), MethodName(tailMethodObj));
     result = NsfPrintError(interp, "%s: unable to dispatch method '%s'",
                            ObjectName_(object), (tailMethodObj != NULL) ? MethodName(tailMethodObj) : methodName);
   }
