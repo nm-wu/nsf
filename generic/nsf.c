@@ -13426,6 +13426,12 @@ ObjectDispatchFinalize(Tcl_Interp *interp, NsfCallStackContent *cscPtr,
     if (unlikely(((flags & NSF_CSC_METHOD_IS_UNKNOWN) != 0u)
                  || ((cscPtr->frameType == NSF_CSC_TYPE_ACTIVE_FILTER) && rst->unknown)
                  )) {
+#if defined(NRE)
+      if (cscPtr->frameType == NSF_CSC_TYPE_ACTIVE_FILTER && rst->unknown && cscPtr->objv == NULL /* TODO: revise */) {
+        /* NsfShowStack(interp); */
+        cscPtr = CallStackGetTopFrame0(interp);
+      }
+#endif
       result = DispatchUnknownMethod(interp, object,
                                      cscPtr->objc, cscPtr->objv, NULL, cscPtr->objv[0],
                                      (cscPtr->flags & NSF_CSC_CALL_NO_UNKNOWN)|NSF_CSC_IMMEDIATE);
