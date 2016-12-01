@@ -1318,23 +1318,35 @@ namespace eval ::nx {
       # When slot objects are destroyed, flush the parameter cache and
       # delete the accessors
       #
-      #puts stderr "*** slot destroy of [self], domain ${:domain} per-object ${:per-object}"
+      puts stderr "*** slot destroy of [self], domain ${:domain} per-object ${:per-object}"
 
       if {${:per-object}} {
 	::nsf::parameter::cache::objectinvalidate ${:domain}
 	if {[${:domain} ::nsf::methods::object::info::method exists ${:name}]} {
 	  ::nsf::method::delete ${:domain} -per-object ${:name}
 	}
-      } elseif {[::nsf::is class ${:domain}]} {
-        ::nsf::parameter::cache::classinvalidate ${:domain}
-        if {[${:domain} ::nsf::methods::class::info::method exists ${:name}]} {
-          ::nsf::method::delete ${:domain} ${:name}
-        }
       } else {
-        nsf::log Warning "ignore inproper domain ${:domain} during destroy (maybe per-object not set?)"
+
+        puts stderr ---isEnter---
+        # set is [::nsf::is class ${:domain}]
+        set is [${:domain} ::nsf::methods::object::info::hastype ::nx::Class]
+        puts stderr ---isLeave($is)---
+        if {$is} {
+          puts stderr ---1---
+          ::nsf::parameter::cache::classinvalidate ${:domain}
+          puts stderr ---2---
+          if {[${:domain} ::nsf::methods::class::info::method exists ${:name}]} {
+            ::nsf::method::delete ${:domain} ${:name}
+          }
+        } else {
+          nsf::log Warning "ignore inproper domain ${:domain} during destroy (maybe per-object not set?)"
+        }
       }
     }
-    ::nsf::next
+    puts stderr ---destroyEnter---
+    set r [::nsf::next]
+    puts stderr ---destroyLeave---
+    return $r
   }
 
   #

@@ -1736,10 +1736,10 @@ GetObjectFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, NsfObject **objectPtr) {
 #if TCL_MAJOR_VERSION==8 && TCL_MINOR_VERSION>6
     if (origTypePtr == objPtr->typePtr && Tcl_Command_cmdEpoch(cmd) > 0) {
 
-      TclFreeIntRep(objPtr);
+      /* TclFreeIntRep(objPtr);
       fprintf(stderr, ".... %p RETRY flags %.6x cmd epoch %d\n",
               objPtr, Tcl_Command_flags(cmd), Tcl_Command_cmdEpoch(cmd));
-      return GetObjectFromObj(interp, objPtr, objectPtr);
+              return GetObjectFromObj(interp, objPtr, objectPtr);*/
     }
 #endif
 
@@ -6786,6 +6786,9 @@ CallStackDestroyObject(Tcl_Interp *interp, NsfObject *object) {
     fprintf(stderr, "  CallStackDestroyObject has to DispatchDestroyMethod %p activationCount %d\n",
             object, activationCount);
 #endif
+        fprintf(stderr, "  CallStackDestroyObject has to DispatchDestroyMethod %p activationCount %d\n",
+            object, activationCount);
+
     DispatchDestroyMethod(interp, object, 0);
 
     if (activationCount == 0) {
@@ -14113,8 +14116,8 @@ DispatchDestroyMethod(Tcl_Interp *interp, NsfObject *object, unsigned int flags)
     return TCL_OK;
   }
 
-  /*fprintf(stderr, "    DispatchDestroyMethod obj %p flags %.6x active %d\n",
-    object, object->flags,  object->activationCount); */
+  fprintf(stderr, "    DispatchDestroyMethod obj %p flags %.6x active %d cmd %p epoch %d\n",
+          object, object->flags,  object->activationCount, object->id, Tcl_Command_cmdEpoch(object->id));
 
   PRINTOBJ("DispatchDestroyMethod", object);
 
@@ -18665,11 +18668,11 @@ CleanupDestroyObject(Tcl_Interp *interp, NsfObject *object, int softrecreate) {
   nonnull_assert(interp != NULL);
   nonnull_assert(object != NULL);
 
-  /*fprintf(stderr, "CleanupDestroyObject obj %p softrecreate %d nsPtr %p\n",
-    object, softrecreate, object->nsPtr);*/
+  fprintf(stderr, "CleanupDestroyObject obj %p softrecreate %d nsPtr %p\n",
+    object, softrecreate, object->nsPtr);
 
-  /*
-   * The object pointer is guaranteed to point to the same object, so it is
+  
+  /* The object pointer is guaranteed to point to the same object, so it is
    * not sufficient for methodObj validation. Therefore, for objects
    * containing per-object methods, we increment the objectMethodEpoch.
    */
@@ -18844,10 +18847,12 @@ static void
 TclDeletesObject(ClientData clientData) {
   NsfObject *object;
   Tcl_Interp *interp;
+  Command *cmdPtr; 
 
   nonnull_assert(clientData != NULL);
 
   object = (NsfObject *)clientData;
+  cmdPtr = (Command *)object->id;
   /*
    * TODO: Actually, it seems like a good idea to flag a deletion from Tcl by
    * setting object->id to NULL. However, we seem to have some dependencies
@@ -18861,6 +18866,7 @@ TclDeletesObject(ClientData clientData) {
 #ifdef OBJDELETION_TRACE
   fprintf(stderr, "TclDeletesObject %p obj->id %p flags %.6x\n", object, object->id, object->flags);
 #endif
+  fprintf(stderr, "TclDeletesObject %p obj->id %p epoch %d\n", object, object->id, Tcl_Command_cmdEpoch(object->id));
   if ((object->flags & NSF_DURING_DELETE) != 0u || !object->teardown) {
     return;
   }
@@ -18870,6 +18876,7 @@ TclDeletesObject(ClientData clientData) {
 # endif
 
   CallStackDestroyObject(interp, object);
+  cmdPtr->cmdEpoch++;
 }
 
 
@@ -19671,6 +19678,7 @@ PrimitiveCCreate(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_Namespace *parentNsPt
   nameString = ObjStr(nameObj);
   object = (NsfObject *)cl;
 
+  fprintf(stderr, "CKALLOC Class %p %s\n", cl, nameString);
 #if defined(NSFOBJ_TRACE)
   fprintf(stderr, "CKALLOC Class %p %s\n", cl, nameString);
 #endif
@@ -19878,7 +19886,7 @@ DoObjInitialization(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *CO
 
     errObj = Tcl_GetObjResult(interp);
     INCR_REF_COUNT(errObj);
-
+    fprintf(stderr, "DoObjInitialization %p\n", (NsfObject *)object);
     DispatchDestroyMethod(interp, (NsfObject *)object, 0);
 
     Tcl_SetObjResult(interp, errObj);
@@ -24533,8 +24541,8 @@ NsfDebugShowObj(Tcl_Interp *interp, Tcl_Obj *objPtr) {
       Command *procPtr = (Command *)cmd;
       char    *tail = Tcl_GetHashKey(procPtr->hPtr->tablePtr, procPtr->hPtr);
 
-      fprintf(stderr, "... cmd %p flags %.6x name '%s' ns '%s'",
-              (void *)cmd, Tcl_Command_flags(cmd), tail, procPtr->nsPtr->name);
+      fprintf(stderr, "... cmd %p flags %.6x name '%s' ns '%s' epoch '%d'",
+              (void *)cmd, Tcl_Command_flags(cmd), tail, procPtr->nsPtr->name, Tcl_Command_cmdEpoch(cmd));
     }
   }
   fprintf(stderr, "\n");
@@ -28984,8 +28992,8 @@ NsfODestroyMethod(Tcl_Interp *interp, NsfObject *object) {
       return NsfPrintError(interp, "cannot destroy base class %s", ObjectName_(object));
     }
   }
-
-  /*fprintf(stderr,"NsfODestroyMethod %p %s flags %.6x activation %d cmd %p cmd->flags %.6x\n",
+  
+  /* fprintf(stderr,"NsfODestroyMethod %p %s flags %.6x activation %d cmd %p cmd->flags %.6x\n",
           object, ((Command *)object->id)->flags == 0 ? ObjectName(object) : "(deleted)",
           object->flags, object->activationCount, object->id, ((Command *)object->id)->flags);*/
 
