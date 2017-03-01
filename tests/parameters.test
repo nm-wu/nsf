@@ -508,7 +508,7 @@ nx::test case multivalued {
 
   Foo create foo -ints {1 2}
   ? {foo ints add 0} "0 1 2"
-  ? {foo ints add a} {expected integer but got "a" for parameter "value"}
+  ? {foo ints add a} {expected integer but got "a" for parameter "ints"}
 }
 
 #######################################################
@@ -1162,7 +1162,7 @@ nx::test case op-object-types {
       "value is a list of objects (multiple elements)"
 
   ? {p os set {o xxx d1}} \
-      {invalid value in "o xxx d1": expected object but got "xxx" for parameter "value"} \
+      {invalid value in "o xxx d1": expected object but got "xxx" for parameter "os"} \
       "list with invalid object"
 }
 
@@ -1272,7 +1272,7 @@ nx::test case slot-specfic-converter {
     # }
     :property -accessor public sex:sex,convert {
       :object method type=sex {name value} {
-	#puts stderr "[self] slot specific converter"
+	puts stderr "[self] slot specific converter"
 	switch -glob $value {
 	  m* {return m}
 	  f* {return f}
@@ -1284,8 +1284,9 @@ nx::test case slot-specfic-converter {
   }
 
   Person create p1 -sex male
-  ? {p1 cget -sex} m
-  ? {p1 sex get} m
+  # ? {p1 cget -sex} m
+  # ? {p1 sex get} m
+  # args=obj var sex:sex,slot=::Person::slot::sex,convert
   Person public method foo {s:sex,slot=::Person::slot::sex,convert} {return $s}
   ? {p1 foo male} m
   ? {p1 sex set male} m
@@ -2390,8 +2391,8 @@ nx::test case object-level-variable {
     :j add 2
     ? [list [self] i get] "2 1"
     ? [list [self] j get] "2 1"
-    ? [list [self] i add a] {expected integer but got "a" for parameter "value"}
-    ? [list [self] j add a] {expected integer but got "a" for parameter "value"}
+    ? [list [self] i add a] {expected integer but got "a" for parameter "i"}
+    ? [list [self] j add a] {expected integer but got "a" for parameter "j"}
   }
 
   nx::Class create C {

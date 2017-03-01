@@ -731,9 +731,9 @@ nx::test case property-incremental-multiplicity {
   ? {o1 b set {1 2 3}} {1 2 3}
 
   ? {o1 a set ""} {}
-  ? {o1 b set ""} {invalid value for parameter 'value': list is not allowed to be empty}
+  ? {o1 b set ""} {invalid value for parameter 'b': list is not allowed to be empty}
   ? {o1 c set ""} {}
-  ? {o1 d set ""} {invalid value for parameter 'value': list is not allowed to be empty}
+  ? {o1 d set ""} {invalid value for parameter 'd': list is not allowed to be empty}
   
 }
 
