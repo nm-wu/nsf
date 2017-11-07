@@ -2032,6 +2032,7 @@ IsObjectOfType(Tcl_Interp *interp, NsfObject *object, const char *what, Tcl_Obj 
   if (likely(pPtr->converterArg == NULL)) {
     return TCL_OK;
   }
+  fprintf(stderr, "pPtr->converterArg %s\n", ObjStr(pPtr->converterArg));
   if (likely((GetClassFromObj(interp, pPtr->converterArg, &cl, 0) == TCL_OK))
       && IsSubType(object->cl, cl)) {
     return TCL_OK;
@@ -15274,6 +15275,7 @@ Nsf_ConvertToObject(Tcl_Interp *interp, Tcl_Obj *objPtr, Nsf_Param const *pPtr,
   assert(*outObjPtr == objPtr);
 
   if (likely(GetObjectFromObj(interp, objPtr, (NsfObject **)clientData) == TCL_OK)) {
+    fprintf(stderr, "objPtr %s into class %s\n", ObjStr(objPtr), ObjectName((NsfObject *)*clientData));
     result = IsObjectOfType(interp, (NsfObject *)*clientData, "object", objPtr, pPtr);
   } else {
     result = NsfObjErrType(interp, NULL, objPtr, "object", (Nsf_Param *)pPtr);
@@ -15317,6 +15319,7 @@ Nsf_ConvertToClass(Tcl_Interp *interp, Tcl_Obj *objPtr,  Nsf_Param const *pPtr,
   withUnknown = (RUNTIME_STATE(interp)->doClassConverterOmitUnknown == 0);
 
   if (likely(GetClassFromObj(interp, objPtr, (NsfClass **)clientData, withUnknown) == TCL_OK)) {
+    fprintf(stderr, "objPtr %s into class %s\n", ObjStr(objPtr), ObjectName((NsfObject *)*clientData));
     result = IsObjectOfType(interp, (NsfObject *)*clientData, "class", objPtr, pPtr);
   } else {
     result = NsfObjErrType(interp, NULL, objPtr, "class", (Nsf_Param *)pPtr);
@@ -15959,7 +15962,19 @@ ParamOptionParse(Tcl_Interp *interp, const char *argString,
     if (paramPtr->converterArg != NULL) {
       DECR_REF_COUNT(paramPtr->converterArg);
     }
+
+#if 0
+    if (!isAbsolutePath(option + 5)) {
+      paramPtr->converterArg = NameInNamespaceObj(option + 5, CallingNameSpace(interp));
+    } else {
+      paramPtr->converterArg = Tcl_NewStringObj(option + 5, (int)optionLength - 5);
+    }
+#else
     paramPtr->converterArg = Tcl_NewStringObj(option + 5, (int)optionLength - 5);
+#endif
+
+    fprintf(stderr, "paramPtr->converterArg %s\n", ObjStr(paramPtr->converterArg));
+
     if (unlikely(unescape)) {
       Unescape(paramPtr->converterArg);
     }
