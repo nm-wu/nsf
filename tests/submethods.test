@@ -1064,7 +1064,6 @@ nx::test case ensemble-private-local-checks {
   ? {c1 FOO1} "B.bar.1"
   ? {c1 FOO2} "C.bar.1 B.bar.1"
   ? {c1 FOO3 FAR FIM} "B.bar.1"
-
 }
 
 #
