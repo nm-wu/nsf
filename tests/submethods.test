@@ -969,7 +969,8 @@ nx::test case ensemble-forwards {
   ? [list $C foo 7] "unable to dispatch sub-method \"7\" of $C foo; valid are: foo 6"
   ? [list $C eval {:foo 7}] "7"
   ? [list $C foo 8] "unable to dispatch sub-method \"8\" of $C foo; valid are: foo 6"
-  ? [list $C eval {:foo 8}] "8"; # ! should not be possible !
+  ? [list $C eval {:foo 8}] "unable to dispatch sub-method \"8\" of $C foo; valid are: foo 6";
+  ? [list $C eval {: -local foo 8}] "8";
   
   set c [$C new]
   
@@ -979,7 +980,8 @@ nx::test case ensemble-forwards {
   ? [list $c foo 3] "unable to dispatch sub-method \"3\" of $c foo; valid are: foo 2"
   ? [list $c eval {:foo 3}] "3"
   ? [list $c foo 4] "unable to dispatch sub-method \"4\" of $c foo; valid are: foo 2"
-  ? [list $c eval {:foo 4}] "4"; # ! should not be possible !
+  ? [list $c eval {:foo 4}] "unable to dispatch sub-method \"4\" of $c foo; valid are: foo 2";
+  ? [list $c eval {: -local foo 4}] "4";
 
 }
 
