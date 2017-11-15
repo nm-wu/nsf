@@ -1221,8 +1221,12 @@ namespace eval ::nx {
     set prefix [expr {[info exists :positional] && ${:positional} ? "" : "-"}]
     set options [list]
     if {[info exists :default]} {
-      if {[string match {*\[*\]*} ${:default}]} {
-        append options substdefault
+      if {([string first \[ ${:default}] > -1 ||
+           [string first \$ ${:default}] > -1)} {
+        if {![info complete ${:default}]} {
+          return -code error "default value '${:default}' is an incomplete command"
+        }
+        lappend options substdefault
       }
       set :parameterSpec [list [list [:namedParameterSpec $prefix $name $options]] ${:default}]
     } else {
@@ -1480,7 +1484,12 @@ namespace eval ::nx {
         # Only add implicit substdefault, when default is given and
         # substdefault is allowed via substdefault slot property.
         #
-	if {[string match {*\[*\]*} ${:default}] && ${:substdefault}} {
+	if {${:substdefault} &&
+            ([string first \[ ${:default}] > -1 ||
+             [string first \$ ${:default}] > -1)} {
+          if {![info complete ${:default}]} {
+            return -code error "default value '${:default}' is an incomplete command"
+          }
 	  lappend options substdefault
 	}
 	set :parameterSpec [list [:namedParameterSpec $prefix ${:name} $options] ${:default}]
