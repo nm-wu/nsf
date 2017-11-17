@@ -2260,7 +2260,7 @@ namespace eval ::nx {
     }
 
     if {$parameterOptions ne "" && "substdefault" in [split $parameterOptions ,]} {
-      set defaultValue [subst $defaultValue]
+      set defaultValue [apply [list {} [list subst $defaultValue]]]
     }
 
     if {$initblock eq "" && !$configurable && !$incremental
