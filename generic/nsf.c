@@ -18791,7 +18791,7 @@ NextSearchAndInvoke(Tcl_Interp *interp, const char *methodName,
     fprintf(stderr, "######## cscPtr %p topCscPtr %p varFramePtr %p\n", cscPtr, topCscPtr, varFramePtr);
 
 
-    if (/*((cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) == 0u) && */(cscPtr1 != NULL && ((cscPtr1->flags & NSF_CSC_CALL_IS_NEXT) != 0u))) {
+    if (((cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) == 0u) /*TODO: fix this */ && (cscPtr1 != NULL && ((cscPtr1->flags & NSF_CSC_CALL_IS_NEXT) != 0u))) {
       cscPtr = cscPtr1;
     }
 

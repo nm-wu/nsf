@@ -1067,6 +1067,43 @@ nx::test case ensemble-private-local-checks {
 
 }
 
+nx::Class create ::A
+set host ::A
+# set host ::nx::Object
+nx::test case tmp {
+    $::host public method "i o x a" {} {return a}
+    $::host public alias "i o x b" ::nsf::methods::class::info::heritage
+}
+
+nx::Class create B -superclasses A {
+    :public method "i o x s" args {
+	next; # IRGH: Should not trigger unknown!
+	return [current class]
+    }
+    :create b {
+	:public object method "i o x s" args {
+	    next
+	}
+    }
+}
+
+? {b i o x s} "::B"; # IRGH: "unable to dispatch sub-method "s" of ::b i; valid are: i o a, i o b, i s"
+
+b object mixins set [nx::Class new {
+    :public method "i o x s" args {
+	next
+    }
+
+    :public method "i o x c" args {;}
+
+}]
+
+? {b i o x s} "::B"; # IRGH: "unable to dispatch sub-method "s" of ::b i; valid are: i o a, i o b, i s"
+
+? {b i o x d} "::B"; # IRGH: "unable to dispatch sub-method "s" of ::b i; valid are: i o a, i o b, i s"
+
+
+
 #
 # Local variables:
 #    mode: tcl
