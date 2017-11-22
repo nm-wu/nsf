@@ -13376,9 +13376,9 @@ ObjectCmdMethodDispatch(NsfObject *invokedObject, Tcl_Interp *interp, int objc, 
      * (CMETHOD) being popped from the stack already.
      */
 
-    /*fprintf(stderr, ".... ensemble dispatch object %s self %s pass %s\n",
+    fprintf(stderr, ".... ensemble dispatch object %s self %s pass %s\n",
       ObjectName(invokedObject), ObjectName(actualSelf), (actualSelf->flags & NSF_KEEP_CALLER_SELF) ? "callerSelf" : "invokedObject");
-      fprintf(stderr, ".... ensemble dispatch on %s.%s objflags %.8x cscPtr %p base flags %.6x flags %.6x cl %s\n",
+    /*fprintf(stderr, ".... ensemble dispatch on %s.%s objflags %.8x cscPtr %p base flags %.6x flags %.6x cl %s\n",
       ObjectName(actualSelf), subMethodName, actualSelf->flags,
       cscPtr, (0xFF & cscPtr->flags), (cscPtr->flags & 0xFF)|NSF_CSC_IMMEDIATE, (actualClass != NULL) ? ClassName(actualClass) : "NONE");*/
     result = MethodDispatch(interp, objc-1, objv+1,
@@ -13399,8 +13399,8 @@ ObjectCmdMethodDispatch(NsfObject *invokedObject, Tcl_Interp *interp, int objc, 
     Tcl_CallFrame *framePtr1;
     NsfCallStackContent *cscPtr1 = CallStackGetTopFrame(interp, &framePtr1);
 
-    /*fprintf(stderr, "call next instead of unknown %s.%s \n",
-      ObjectName(cscPtr->self), methodName);*/
+    fprintf(stderr, "call next instead of unknown %s.%s \n",
+      ObjectName(cscPtr->self), methodName);
 
     assert(cscPtr1 != NULL);
     if ((cscPtr1->frameType & NSF_CSC_TYPE_ENSEMBLE)) {
@@ -13422,15 +13422,15 @@ ObjectCmdMethodDispatch(NsfObject *invokedObject, Tcl_Interp *interp, int objc, 
      * the MethodName() function.
      */
     cscPtr1-> flags |= NSF_CM_ENSEMBLE_UNKNOWN;
-    /* fprintf(stderr, "==> trying to find <%s> in ensemble <%s> via next\n",
-       subMethodName, MethodName(cscPtr1->objv[0]));*/
+     fprintf(stderr, "==> trying to find <%s> in ensemble <%s> via next\n",
+       subMethodName, MethodName(cscPtr1->objv[0]));
     result = NextSearchAndInvoke(interp, MethodName(cscPtr1->objv[0]),
                                  cscPtr1->objc, cscPtr1->objv, cscPtr1, 0);
 
-    /*fprintf(stderr, "==> next %s.%s subMethodName %s (obj %s) cscPtr %p (flags %.8x)) cscPtr1 %p (flags %.8x) result %d unknown %d\n",
+    fprintf(stderr, "==> next %s.%s subMethodName %s (obj %s) cscPtr %p (flags %.8x)) cscPtr1 %p (flags %.8x) result %d unknown %d\n",
             ObjectName(callerSelf), methodName, subMethodName, ObjectName(invokedObject),
             cscPtr, cscPtr->flags, cscPtr1, (cscPtr1 != NULL) ? cscPtr1->flags : 0,
-            result, RUNTIME_STATE(interp)->unknown);*/
+            result, RUNTIME_STATE(interp)->unknown);
 
     if (RUNTIME_STATE(interp)->unknown) {
       Tcl_Obj *callInfoObj = Tcl_NewListObj(1, &callerSelf->cmdName);
@@ -18708,8 +18708,8 @@ NextSearchAndInvoke(Tcl_Interp *interp, const char *methodName,
                             object, cl, methodName, frameType, cscPtr->flags);
 #endif
   } else if (likely(result == TCL_OK)) {
-    NsfCallStackContent *topCscPtr;
-    Tcl_CallFrame *varFramePtr = NULL;
+    NsfCallStackContent *topCscPtr, *cscPtr1;
+    Tcl_CallFrame *varFramePtr = NULL, *varFramePtr1;
     int isLeafNext;
 
     /*
@@ -18739,11 +18739,16 @@ NextSearchAndInvoke(Tcl_Interp *interp, const char *methodName,
     assert(topCscPtr != NULL);
     assert(varFramePtr != NULL);
 
+    fprintf(stderr, "######## cscPtr %p topCscPtr %p\n", cscPtr, topCscPtr);
+
+
     /*
      * Find the appropriate frame pointing to the start of the ensemble, in
      * case we are in the middle of an ensemble.
      */
-    /*fprintf(stderr, "######## cscPtr %p topCscPtr %p\n", cscPtr, topCscPtr);*/
+
+
+    
     if ( cscPtr != topCscPtr
          && (cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) != 0u
          && (topCscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) != 0u) {
@@ -18767,6 +18772,31 @@ NextSearchAndInvoke(Tcl_Interp *interp, const char *methodName,
       }
     }
 
+    NsfShowStack(interp);
+
+    /* if ((cscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) != 0u) {
+      Tcl_CallFrame *varFramePtr1;
+      NsfCallStackContent *cscPtr1;
+      cscPtr1 = CallStackFindEnsembleCsc(varFramePtr, &varFramePtr1);
+      fprintf(stderr, "CallStackFindEnsembleCsc framePtr %p cscPtr %p\n", varFramePtr1, cscPtr1);
+      }*/
+
+    
+    varFramePtr1 = CallStackNextFrameOfType(Tcl_CallFrame_callerPtr(varFramePtr),
+                                        FRAME_IS_NSF_METHOD|FRAME_IS_NSF_CMETHOD);
+    cscPtr1 = (varFramePtr1 != NULL) ? Tcl_CallFrame_clientData(varFramePtr1) : NULL;
+
+    fprintf(stderr, "isnextcall: %d %p\n", (cscPtr1 != NULL && ((cscPtr1->flags & NSF_CSC_CALL_IS_NEXT) != 0u)), cscPtr1);
+
+    fprintf(stderr, "######## cscPtr %p topCscPtr %p varFramePtr %p\n", cscPtr, topCscPtr, varFramePtr);
+
+
+    if (/*((cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) == 0u) && */(cscPtr1 != NULL && ((cscPtr1->flags & NSF_CSC_CALL_IS_NEXT) != 0u))) {
+      cscPtr = cscPtr1;
+    }
+
+    fprintf(stderr, "######## cscPtr %p topCscPtr %p varFramePtr %p\n", cscPtr, topCscPtr, varFramePtr);
+
     /* case 2 */
     isLeafNext = (cscPtr != topCscPtr)
       && (topCscPtr->frameType & NSF_CSC_TYPE_ENSEMBLE) != 0u
@@ -18775,8 +18805,8 @@ NextSearchAndInvoke(Tcl_Interp *interp, const char *methodName,
     rst->unknown = /* case 1 */ endOfFilterChain ||
       /* case 3 */ (!isLeafNext && ((cscPtr->flags & NSF_CSC_CALL_IS_ENSEMBLE) != 0u));
 
-    /*fprintf(stderr, "******** setting unknown to %d isLeafNext %d topCscPtr %p endOfFilterChain %d\n",
-      rst->unknown, isLeafNext, topCscPtr, endOfFilterChain);*/
+    fprintf(stderr, "******** setting unknown to %d isLeafNext %d topCscPtr %p endOfFilterChain %d\n",
+      rst->unknown, isLeafNext, topCscPtr, endOfFilterChain);
   }
 
  next_search_and_invoke_cleanup:
