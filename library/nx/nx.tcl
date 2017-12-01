@@ -6,7 +6,7 @@
 #      system, based on the Next Scripting Framework (NSF).
 #
 # Copyright (C) 2010-2016 Gustaf Neumann
-# Copyright (C) 2010-2016 Stefan Sobernig
+# Copyright (C) 2010-2017 Stefan Sobernig
 #
 # Vienna University of Economics and Business
 # Institute of Information Systems and New Media
@@ -1227,7 +1227,7 @@ namespace eval ::nx {
     set options [list]
     if {[info exists :default]} {
       if {[string match {*\[*\]*} ${:default}]} {
-        append options substdefault
+        lappend options substdefault
       }
       set :parameterSpec [list [list [:namedParameterSpec $prefix $name $options]] ${:default}]
     } else {
@@ -1448,7 +1448,7 @@ namespace eval ::nx {
 
   ObjectParameterSlot public method getParameterSpec {} {
     #
-    # Get a full object parmeter specification from slot object
+    # Get a full object para meter specification from slot object
     #
     if {[info exists :parameterSpec]} {
     } else {
@@ -1485,7 +1485,7 @@ namespace eval ::nx {
         # Only add implicit substdefault, when default is given and
         # substdefault is allowed via substdefault slot property.
         #
-	if {[string match {*\[*\]*} ${:default}] && ${:substdefault}} {
+	if {${:substdefault}} {
 	  lappend options substdefault
 	}
 	set :parameterSpec [list [:namedParameterSpec $prefix ${:name} $options] ${:default}]
@@ -1494,7 +1494,7 @@ namespace eval ::nx {
       }
     }
 
-    #puts stderr [self]================${:parameterSpec}
+    puts stderr [self]================${:parameterSpec}
     return ${:parameterSpec}
   }
 
@@ -2255,10 +2255,18 @@ namespace eval ::nx {
       set trace ${:trace}
     }
 
-    if {$parameterOptions ne "" && "substdefault" in [split $parameterOptions ,]} {
+    if {[info exists defaultValue] && "substdefault" in [split $parameterOptions ,] &&
+        [string match {*\[*\]*} $defaultValue]} {
+      if {![info complete $defaultValue]} {
+        return -code error "substdefault: default '$defaultValue' is not a complete script"
+      }
+      # TODO: This should be -novariables, and protected by
+      # [apply]. For now, untouched, as ArgumentDefaults() has no
+      # substitution restrictions.
       set defaultValue [subst $defaultValue]
     }
 
+    
     if {$initblock eq "" && !$configurable && !$incremental
         && $accessor eq "none" && ![info exists trace]} {
       #
@@ -2269,19 +2277,21 @@ namespace eval ::nx {
       set isSwitch [regsub {\mswitch\M} $parameterOptions boolean parameterOptions]
 
       if {[info exists defaultValue]} {
-	if {[info exists :$name] && !$nocomplain} {
+      	if {[info exists :$name] && !$nocomplain} {
 	  return -code error \
 	      "object [self] has already an instance variable named '$name'"
 	}
 	if {$parameterOptions ne ""} {
-	  #puts stderr "*** ::nsf::is $parameterOptions $defaultValue // opts=$options"
+	  # puts stderr "*** ::nsf::is $parameterOptions $defaultValue // opts=$options"
 	  # we rely here that the nsf::is error message expresses the implementation limits
 	  set noptions {}
+          
 	  foreach o [split $parameterOptions ,] {
 	    if {$o ni {noconfig substdefault}} {lappend noptions $o}
 	  }
-
+          
 	  set parameterOptions [join $noptions ,]
+          
 	  ::nsf::is -complain $parameterOptions $defaultValue
 	} else {
 	  set name $spec
@@ -2383,6 +2393,20 @@ namespace eval ::nx {
       }
       lappend defaultopts -trace $trace
     }
+
+    ## lassign [::nx::MetaSlot parseParameterSpec -class $class [self] $spec] \
+    ##	_ parameterOptions _ _
+
+    puts stderr >>>$spec
+    
+    # if {[info exists defaultValue] && "substdefault" in [split $parameterOptions ,] &&
+    #     [string match {*\[*\]*} $defaultValue]} {
+    #   if {![info complete $defaultValue]} {
+    #     return -code error "substdefault: default '$defaultValue' is not a complete script"
+    #   }
+    #   puts stderr >>>[self]=$defaultValue
+    # }
+      
     set slot [::nx::MetaSlot createFromParameterSpec [::nsf::self] \
 		  -class $class \
 		  -initblock $initblock \
