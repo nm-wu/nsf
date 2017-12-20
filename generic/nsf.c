@@ -26063,7 +26063,7 @@ NsfParseArgsCmd(Tcl_Interp *interp, Tcl_Obj *argspecObj, Tcl_Obj *arglistObj) {
   int              result, objc;
 
   fprintf(stderr, "Tcl_GetCurrentNamespace(interp) %s\n", Tcl_GetCurrentNamespace(interp)->fullName);
-  result = ParamDefsParse(interp, NsfGlobalObjs[NSF_PARSE_ARGS], argspecObj,
+  result = ParamDefsParse2(interp, NsfGlobalObjs[NSF_PARSE_ARGS], argspecObj,
                           NSF_DISALLOWED_ARG_METHOD_PARAMETER, 1 /* force use of param structure, 
                                                                     even for Tcl-only params */,
                           &parsedParam, Tcl_GetCurrentNamespace(interp)->fullName);
