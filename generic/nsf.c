@@ -15864,10 +15864,11 @@ ParamOptionParse(Tcl_Interp *interp, const char *argString,
       return NsfPrintError(interp,
                            "parameter option 'arg=' only allowed for user-defined converter");
     }
+
     if (paramPtr->converterArg != NULL) {
       DECR_REF_COUNT(paramPtr->converterArg);
     }
-
+    paramPtr->converterArg = Tcl_NewStringObj(option + 4, (int)optionLength - 4);
     /*
      * In case, we know that we have to unescape double commas, do it here...
      */
