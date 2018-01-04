@@ -15935,7 +15935,7 @@ ParamOptionParse(Tcl_Interp *interp, const char *argString,
     const char* typeValue = option + 5;
     int typeValueLength = (int)optionLength - 5;
     
-    if (qualifier != NULL && !isAbsolutePath(option) &&
+    if (qualifier != NULL && !isAbsolutePath(typeValue) &&
         isAbsolutePath(qualifier)) {
       Tcl_DString ds, *dsPtr = &ds;
       Tcl_DStringInit(dsPtr);
