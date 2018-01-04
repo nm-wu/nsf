@@ -1673,7 +1673,7 @@ nx::test case checktype {
 
   ? {o f11} 1
   ? {o f12} 1
-  ? {o f13} 1
+  ? {o f13} 0
 }
 
 #
@@ -1684,7 +1684,7 @@ namespace eval foo {
     :create c1
     :public method f21 {} {::nsf::dispatch c1 ::nsf::methods::object::info::hastype nx::Object}
     :public method f22 {} {::nsf::dispatch c1 ::nsf::methods::object::info::hastype C}
-    :public method f31 {} {::nsf::is object,type=Object c1}
+    :public method f31 {} {::nsf::is object,type=::nx::Object c1}
     :public method f32 {} {::nsf::is object,type=C c1}
   }
 
@@ -1696,10 +1696,10 @@ namespace eval foo {
     :public object method f05 {} {::nsf::dispatch c1 ::nsf::methods::object::info::hastype C}
 
     :public object method f11 {} {::nsf::is object,type=::nx::Object c1}
-    :public object method f12 {} {::nsf::is object,type=nx::Object c1}
-    :public object method f13 {} {::nsf::is object,type=Object c1}
-    :public object method f14 {} {::nsf::is object,type=foo::C c1}
-    :public object method f15 {} {::nsf::is object,type=C c1}
+    :public object method f12 {} {::nsf::is object,type=nx::Object c1}; # resolves to ::foo::nx::Object
+    :public object method f13 {} {::nsf::is object,type=Object c1}; # resolves to ::foo::Object
+    :public object method f14 {} {::nsf::is object,type=C c1}; # resolves to ::foo::C
+    :public object method f15 {} {::nsf::is object,type=[namespace which C] c1}; # ::foo::C 
   }
 
   ? {o f01} 1
@@ -1709,8 +1709,8 @@ namespace eval foo {
   ? {o f05} 1
 
   ? {o f11} 1
-  ? {o f12} 1
-  ? {o f13} 1
+  ? {o f12} 0
+  ? {o f13} 0
   ? {o f14} 1
   ? {o f15} 1
 
