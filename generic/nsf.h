@@ -150,6 +150,8 @@
 #define NSF_PRINT_OBJV 1
 */
 
+#define METHOD_OBJECT_TRACE 1
+
 #define PER_OBJECT_PARAMETER_CACHING 1
 
 /*

@@ -984,10 +984,10 @@ CallMethod(ClientData clientData, Tcl_Interp *interp, Tcl_Obj *methodObj,
     memcpy(tov+2, objv, sizeof(Tcl_Obj *) * ((size_t)objc - 2u));
   }
 
-  /*fprintf(stderr, "%%%% CallMethod cmdName=%s, method=%s, objc=%d\n",
+  fprintf(stderr, "%%%% CallMethod cmdName=%s, method=%s, objc=%d\n",
     ObjStr(tov[0]), ObjStr(tov[1]), objc);
     {int i; fprintf(stderr, "\t CALL: %s ", ObjStr(methodObj));for(i = 0; i < objc-2; i++) {
-    fprintf(stderr, "%s ", ObjStr(objv[i]));} fprintf(stderr, "\n");}*/
+    fprintf(stderr, "%s ", ObjStr(objv[i]));} fprintf(stderr, "\n");}
 
   result = ObjectDispatch(clientData, interp, objc, tov, flags);
 
@@ -3697,6 +3697,17 @@ FindMethod(Tcl_Namespace *nsPtr, const char *methodName) {
   nonnull_assert(nsPtr != NULL);
   nonnull_assert(methodName != NULL);
 
+  fprintf(stderr, "FindMethod ns %s m %s\n", nsPtr->fullName, methodName);
+  {
+    Tcl_HashSearch hSrch;
+    const Tcl_HashEntry *hPtr;
+    for (hPtr = Tcl_FirstHashEntry(Tcl_Namespace_cmdTablePtr(nsPtr), &hSrch);
+         hPtr != NULL;
+         hPtr = Tcl_NextHashEntry(&hSrch)) {
+      Tcl_Command cmd = (Tcl_Command)Tcl_GetHashValue(hPtr);
+      fprintf(stderr, "defined %p %s\n", cmd, Tcl_GetHashKey(Tcl_Namespace_cmdTablePtr(nsPtr), hPtr));
+    }
+  }
   if ((entryPtr = Tcl_CreateHashEntry(Tcl_Namespace_cmdTablePtr(nsPtr), methodName, NULL))) {
     result = (Tcl_Command) Tcl_GetHashValue(entryPtr);
   } else {
@@ -3729,6 +3740,7 @@ FindProcMethod(Tcl_Namespace *nsPtr, const char *methodName) {
   nonnull_assert(methodName != NULL);
 
   cmd = FindMethod(nsPtr, methodName);
+  fprintf(stderr, "FindMethod cmd %p", cmd);
   return (cmd != NULL) ? GetTclProcFromCommand(cmd) : NULL;
 }
 
@@ -3785,11 +3797,12 @@ SearchPLMethod(register NsfClasses *pl, const char *methodName,
 
   /* Search the precedence list (class hierarchy) */
   do {
+    fprintf(stderr, "searching %s\n", ClassName(pl->cl));
     register Tcl_HashEntry *entryPtr =
       Tcl_CreateHashEntry(Tcl_Namespace_cmdTablePtr(pl->cl->nsPtr), methodName, NULL);
     if (entryPtr != NULL) {
       Tcl_Command cmd = (Tcl_Command) Tcl_GetHashValue(entryPtr);
-
+      fprintf(stderr, "found %p\n", cmd);
       if (likely(((unsigned int)Tcl_Command_flags(cmd) & flags) == 0u)) {
         *cmdPtr = cmd;
         return pl->cl;
@@ -14328,6 +14341,7 @@ ObjectDispatch(ClientData clientData, Tcl_Interp *interp,
           cl = SearchPLMethod(classListPtr, methodName, &cmd, NSF_CMD_CALL_PRIVATE_METHOD);
         } else {
           cl = SearchPLMethod(currentClass->order, methodName, &cmd, NSF_CMD_CALL_PRIVATE_METHOD);
+          fprintf(stderr, "refetech cl %p cmd %p\n", cl, cmd);
         }
         if (methodObj->typePtr != Nsf_OT_tclCmdNameType
             && methodObj->typePtr != Nsf_OT_parsedVarNameType
@@ -16941,6 +16955,7 @@ MakeProc(Tcl_Namespace *nsPtr, NsfAssertionStore *aStore, Tcl_Interp *interp,
 
   /* Check, if we are allowed to redefine the method */
   result = CanRedefineCmd(interp, nsPtr, defObject, methodName, 0);
+  fprintf(stderr, "CanRedefineCmd %d\n", result == TCL_OK);
   if (likely(result == TCL_OK)) {
     /* Yes, we can! ...so obtain an method parameter definitions */
     Tcl_Namespace *nsPtr1 = Tcl_Command_nsPtr(defObject->id);
@@ -16954,7 +16969,8 @@ MakeProc(Tcl_Namespace *nsPtr, NsfAssertionStore *aStore, Tcl_Interp *interp,
   if (unlikely(result != TCL_OK)) {
     return result;
   }
-
+  fprintf(stderr, "ParamParse\n");
+    
   ov[0] = NULL; /*objv[0];*/
   ov[1] = nameObj;
 
@@ -16983,11 +16999,12 @@ MakeProc(Tcl_Namespace *nsPtr, NsfAssertionStore *aStore, Tcl_Interp *interp,
    * Create the method in the provided namespace.
    */
   result = Tcl_ProcObjCmd(NULL, interp, 4, ov);
-
+  fprintf(stderr, "Tcl_ProcObjCmd %d\n", result == TCL_OK);
   if (likely(result == TCL_OK)) {
     /* retrieve the defined proc */
     Proc *procPtr = FindProcMethod(nsPtr, methodName);
-
+    fprintf(stderr, "FindProcMethod %d\n", procPtr != NULL);
+      
     if (procPtr != NULL) {
       /* modify the cmd of the proc to set the current namespace for the body */
       if (withInner_namespace == 1) {
@@ -16997,16 +17014,18 @@ MakeProc(Tcl_Namespace *nsPtr, NsfAssertionStore *aStore, Tcl_Interp *interp,
         if (regObject->nsPtr == NULL) {
           MakeObjNamespace(interp, regObject);
         }
-        /*fprintf(stderr, "obj %s\n", ObjectName(defObject));
+        fprintf(stderr, "obj %s\n", ObjectName(defObject));
         fprintf(stderr, "ns %p defObject->ns %p\n", nsPtr, defObject->nsPtr);
         fprintf(stderr, "ns %s defObject->ns %s\n", nsPtr->fullName, defObject->nsPtr->fullName);
-        fprintf(stderr, "old %s\n", procPtr->cmdPtr->nsPtr->fullName);*/
+        fprintf(stderr, "old %s\n", procPtr->cmdPtr->nsPtr->fullName);
         procPtr->cmdPtr->nsPtr = (Namespace *)regObject->nsPtr;
       } else {
         /*
          * Set the namespace of the method to the same namespace the cmd of
          * the defObject has.
          */
+        fprintf(stderr, "%s ns %s\n", methodName, procPtr->cmdPtr->nsPtr->fullName);
+                
         procPtr->cmdPtr->nsPtr = ((Command *)regObject->id)->nsPtr;
       }
 
@@ -28905,7 +28924,7 @@ ComputeParameterDefinition(Tcl_Interp *interp, Tcl_Obj *procNameObj,
   }
 
   if (methodObj != NULL) {
-    /*fprintf(stderr, "calling %s %s\n", ObjectName(self), ObjStr(methodObj));*/
+    fprintf(stderr, "calling %s %s\n", ObjectName(self), ObjStr(methodObj));
     result = CallMethod(self, interp, methodObj, 2, NULL,
                         NSF_CM_IGNORE_PERMISSIONS|NSF_CSC_IMMEDIATE);
 
