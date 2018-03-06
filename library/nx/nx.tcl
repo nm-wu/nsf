@@ -2672,7 +2672,7 @@ namespace eval ::nx {
   Class create ::nx::CopyHandler {
 
     puts =====DISASSEMBLE
-    puts stderr [tcl::unsupported::disassemble proc ::nsf::classes::nx::Class::property]
+    # puts stderr [tcl::unsupported::disassemble proc ::nsf::classes::nx::Class::property]
     :property {targetList ""}
     puts yyyyy
     :property {dest ""}

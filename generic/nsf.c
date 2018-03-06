@@ -12005,6 +12005,7 @@ ByteCompiled(Tcl_Interp *interp, unsigned int *flagsPtr,
 
       // procPtr->cmdPtr->nsPtr = nsPtr;
 #endif
+      // procPtr->cmdPtr->nsPtr->flags |= NS_SUPPRESS_COMPILATION;
       result = TclProcCompileProc(interp, procPtr, bodyObj,
                                   (Namespace *) nsPtr, "body of proc",
                                   procName);
@@ -34611,7 +34612,7 @@ Nsf_Init(
   rst->NsfClassesNS =
     Tcl_CreateNamespace(interp, "::nsf::classes", NULL,
                         (Tcl_NamespaceDeleteProc *)NULL);
-  ((Namespace *)rst->NsfClassesNS)->flags |= NS_SUPPRESS_COMPILATION;
+  // ((Namespace *)rst->NsfClassesNS)->flags |= NS_SUPPRESS_COMPILATION;
   MEM_COUNT_ALLOC("TclNamespace", rst->NsfClassesNS);
 
   /*
