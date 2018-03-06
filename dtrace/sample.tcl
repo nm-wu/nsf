@@ -1,5 +1,6 @@
 package require nx
 
+puts >>>>>>Y
 ::nsf::configure dtrace on
 
 nx::Object create o {

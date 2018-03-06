@@ -2524,8 +2524,13 @@ namespace eval ::nx {
     if {$accessor eq ""} {
       set accessor [::nsf::dispatch [self] __default_accessor]
     }
-    set traceSpec [expr {[info exists trace] ? [list -trace $trace] : ""}]
-
+    puts ---[::nsf::__db_show_obj info],[namespace current],[namespace which info],
+    # set traceSpec [expr {[info exists trace] ? [list -trace $trace] : ""}]
+    set traceSpec ""
+    if {[info exists trace]} {
+      set traceSpec  [list -trace $trace]
+    }
+    puts >>>>
     set r [[self] ::nsf::classes::nx::Class::variable \
 	       -accessor $accessor \
 	       -incremental=$incremental \
@@ -2666,7 +2671,10 @@ namespace eval ::nx {
 
   Class create ::nx::CopyHandler {
 
+    puts =====DISASSEMBLE
+    puts stderr [tcl::unsupported::disassemble proc ::nsf::classes::nx::Class::property]
     :property {targetList ""}
+    puts yyyyy
     :property {dest ""}
     :property objLength
 

@@ -12003,13 +12003,13 @@ ByteCompiled(Tcl_Interp *interp, unsigned int *flagsPtr,
        */
       Namespace *oldNsPtr = procPtr->cmdPtr->nsPtr;
 
-      procPtr->cmdPtr->nsPtr = nsPtr;
+      // procPtr->cmdPtr->nsPtr = nsPtr;
 #endif
       result = TclProcCompileProc(interp, procPtr, bodyObj,
                                   (Namespace *) nsPtr, "body of proc",
                                   procName);
 #if defined(PRE86)
-      procPtr->cmdPtr->nsPtr = oldNsPtr;
+      // procPtr->cmdPtr->nsPtr = oldNsPtr;
 #endif
     }
     /*fprintf(stderr, "compiling '%s' with ns %s DONE\n", procName, nsPtr->name);*/
@@ -34611,6 +34611,7 @@ Nsf_Init(
   rst->NsfClassesNS =
     Tcl_CreateNamespace(interp, "::nsf::classes", NULL,
                         (Tcl_NamespaceDeleteProc *)NULL);
+  ((Namespace *)rst->NsfClassesNS)->flags |= NS_SUPPRESS_COMPILATION;
   MEM_COUNT_ALLOC("TclNamespace", rst->NsfClassesNS);
 
   /*
