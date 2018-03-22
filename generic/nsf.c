@@ -1933,8 +1933,8 @@ GetObjectFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, NsfObject **objectPtr) {
    */
   cmd = Tcl_GetCommandFromObj(interp, objPtr);
 
-  /*fprintf(stderr, "GetObjectFromObj obj %p %s (type %p) => cmd=%p (refCount %d)\n",
-    objPtr, ObjStr(objPtr), objPtr->typePtr, cmd, (cmd != NULL) ? Tcl_Command_refCount(cmd) : -1);*/
+  fprintf(stderr, "GetObjectFromObj obj %p %s (type %p) => cmd=%p (refCount %d)\n",
+    objPtr, ObjStr(objPtr), objPtr->typePtr, cmd, (cmd != NULL) ? Tcl_Command_refCount(cmd) : -1);
 
   if (cmd != NULL) {
     NsfObject *cmdObject;
@@ -1973,7 +1973,7 @@ GetObjectFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, NsfObject **objectPtr) {
 
     INCR_REF_COUNT(tmpName);
     object = GetObjectFromString(interp, nsString);
-    /* fprintf(stderr, " RETRY, string '%s' returned %p\n", nsString, object);*/
+    fprintf(stderr, " RETRY, string '%s' returned %p current %s\n", nsString, object, Tcl_GetCurrentNamespace(interp)->fullName);
     DECR_REF_COUNT(tmpName);
   }
 
@@ -2100,7 +2100,7 @@ GetClassFromObj(Tcl_Interp *interp, register Tcl_Obj *objPtr,
 
   objName = ObjStr(objPtr);
   cmd = Tcl_GetCommandFromObj(interp, objPtr);
-  /*fprintf(stderr, "GetClassFromObj %p %s unknown %d cmd %p\n", objPtr, objName, withUnknown, cmd);*/
+  fprintf(stderr, "GetClassFromObj %p %s unknown %d cmd %p\n", objPtr, objName, withUnknown, cmd);
 
   if (likely(cmd != NULL)) {
     class = NsfGetClassFromCmdPtr(cmd);
@@ -23343,18 +23343,18 @@ CallingNameSpace(Tcl_Interp *interp) {
 
   nonnull_assert(interp != NULL);
 
-  /*NsfShowStack(interp);*/
+  NsfShowStack(interp);
   framePtr = CallStackGetActiveProcFrame((Tcl_CallFrame *)Tcl_Interp_varFramePtr(interp));
   /* framePtr = BeginOfCallChain(interp, GetSelfObj(interp));*/
 
   for (; likely(framePtr != NULL); framePtr = Tcl_CallFrame_callerVarPtr(framePtr)) {
     nsPtr = Tcl_CallFrame_nsPtr(framePtr);
-
+    fprintf(stderr, "... %p check %s\n", framePtr, nsPtr->fullName);
     if (IsRootNamespace(interp, nsPtr)) {
-      /*fprintf(stderr, "... %p skip %s\n", framePtr, nsPtr->fullName);*/
+      fprintf(stderr, "... %p skip %s\n", framePtr, nsPtr->fullName);
       continue;
     }
-    /*fprintf(stderr, "... %p take %s\n", framePtr, nsPtr->fullName); */
+    fprintf(stderr, "... %p take %s\n", framePtr, nsPtr->fullName);
     break;
   }
 
@@ -23362,8 +23362,8 @@ CallingNameSpace(Tcl_Interp *interp) {
     nsPtr = Tcl_GetGlobalNamespace(interp);
   }
 
-  /*fprintf(stderr, " **** CallingNameSpace: returns %p %s framePtr %p\n",
-    nsPtr, (nsPtr != NULL) ? nsPtr->fullName:"(null)", framePtr);*/
+  fprintf(stderr, " **** CallingNameSpace: returns %p %s framePtr %p\n",
+    nsPtr, (nsPtr != NULL) ? nsPtr->fullName:"(null)", framePtr);
   return nsPtr;
 }
 
