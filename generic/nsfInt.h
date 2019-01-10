@@ -668,7 +668,6 @@ typedef struct NsfProcClientData {
   Tcl_Command    cmd;
   Tcl_Command    wrapperCmd;
   NsfParamDefs  *paramDefs;
-  Tcl_Namespace *origNsPtr;
   unsigned int   flags;
 } NsfProcClientData;
 
