@@ -1398,12 +1398,13 @@ namespace eval ::nx {
 
       if {${:per-object}} {
 	::nsf::parameter::cache::objectinvalidate ${:domain}
-	if {[${:domain} ::nsf::methods::object::info::method exists ${:name}]} {
+	if {[::nsf::dispatch ${:domain} ::nsf::methods::object::info::method exists ${:name}]} {
 	  ::nsf::method::delete ${:domain} -per-object ${:name}
 	}
       } elseif {[::nsf::is class ${:domain}]} {
         ::nsf::parameter::cache::classinvalidate ${:domain}
-        if {[${:domain} ::nsf::methods::class::info::method exists ${:name}]} {
+        puts =(${:domain})==[::nsf::dispatch ${:domain} ::nsf::methods::class::info::method exists ${:name}]
+        if {[::nsf::dispatch ${:domain} ::nsf::methods::class::info::method exists ${:name}]} {
           ::nsf::method::delete ${:domain} ${:name}
         }
       } else {

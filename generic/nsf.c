@@ -12620,8 +12620,11 @@ NsfParamDefsNonposLookup(
    */
   assert(*nameString == '-');
 
+  fprintf(stderr, "HERE!\n");
+
   ch1 = nameString[2];
   for (paramPtr = paramsPtr; likely(paramPtr->name != NULL) && *paramPtr->name == '-'; paramPtr++) {
+    fprintf(stderr, "length %lu nameString %s paramName %s\n", strlen(nameString), nameString, paramPtr->name);
     if (unlikely((paramPtr->flags & NSF_ARG_NOCONFIG) != 0u)) {
       continue;
     }
@@ -12641,11 +12644,11 @@ NsfParamDefsNonposLookup(
         continue;
       }
 
+      fprintf(stderr, "... <%s> is an abbrev of <%s>\n", nameString, paramPtr->name);
+      
       if (ch1 == paramPtr->name[2]
           && strncmp(nameString, paramPtr->name, length) == 0) {
         const Nsf_Param *pPtr;
-
-        /* fprintf(stderr, "... <%s> is an abbrev of <%s>\n", nameString, paramPtr->name); */
         /*
          * Check whether the abbreviation is unique.
          */
@@ -15343,11 +15346,11 @@ ObjectDispatch(
           methodObj, methodObj->refCount, methodName, methodObjTypePtr,
           (methodObjTypePtr != NULL) ? methodObjTypePtr->name : "");
 #endif
-  /*fprintf(stderr, "==== ObjectDispatch obj = %s objc = %d 0=%s methodName=%s method-obj-type %s cmd %p shift %d\n",
+  fprintf(stderr, "==== ObjectDispatch obj = %s objc = %d 0=%s methodName=%s method-obj-type %s cmd %p shift %d\n",
           (object != NULL) ? ObjectName(object) : NULL,
           objc, objv[0] ? ObjStr(objv[0]) : NULL,
           methodName, methodObjTypePtr ? methodObjTypePtr->name : "NONE",
-          (void*)cmd, shift);*/
+          (void*)cmd, shift);
 
   objflags = object->flags; /* avoid stalling */
 
