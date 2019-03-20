@@ -20693,9 +20693,15 @@ ComputeLevelObj(Tcl_Interp *interp, CallStackLevel level) {
   nonnull_assert(interp != NULL);
 
   switch (level) {
-  case CALLING_LEVEL:
-    NsfCallStackFindLastInvocation(interp, 1, &framePtr);
+  case CALLING_LEVEL: {
+    Tcl_CallFrame *callingFramePtr = NULL;
+    NsfCallStackFindCallingContext(interp, 1, &framePtr, &callingFramePtr);
+    if (framePtr == NULL) {
+      framePtr = callingFramePtr;
+    }
+    // NsfCallStackFindLastInvocation(interp, 1, &framePtr);
     break;
+  }
   case ACTIVE_LEVEL:
     NsfCallStackFindActiveFrame(interp,    1, &framePtr);
     break;
@@ -32359,11 +32365,17 @@ NsfOUplevelMethod(Tcl_Interp *interp, NsfObject *UNUSED(object), int objc, Tcl_O
   objv += i;
 
   if (framePtr == NULL) {
-    NsfCallStackFindLastInvocation(interp, 1, &framePtr);
+    Tcl_CallFrame *callingFramePtr = NULL;
+    NsfCallStackFindCallingContext(interp, 1, &framePtr, &callingFramePtr);
+    // fprintf(stderr, "UPLEVEL framePtr %p\n", framePtr);
+    // NsfCallStackFindLastInvocation(interp, 1, &framePtr);
     if (framePtr == NULL) {
-      framePtr = (Tcl_CallFrame *)Tcl_Interp_varFramePtr(interp)->callerVarPtr;
+      framePtr = callingFramePtr;
       if (framePtr == NULL) {
-        framePtr = (Tcl_CallFrame *)Tcl_Interp_varFramePtr(interp);
+        framePtr = (Tcl_CallFrame *)Tcl_Interp_varFramePtr(interp)->callerVarPtr;
+        if (framePtr == NULL) {
+          framePtr = (Tcl_CallFrame *)Tcl_Interp_varFramePtr(interp);
+        }
       }
     }
   }

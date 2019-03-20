@@ -1607,6 +1607,96 @@ array unset a1
 
 AbstractFile filters delete filterCall
 
+nx::test case callinglevels {
+
+  nx::Object create objekt
+  objekt public object method foo {} {
+    current callinglevel
+  }
+  
+  ? {uplevel #0 {objekt foo}} "#0"
+  ? {uplevel #0 {
+    namespace eval ::ns1 {
+      namespace eval ns2 {
+        objekt foo
+      }
+    }
+  }} "#2"
+  namespace delete ::ns1
+
+  ? {uplevel #0 {apply {{} {objekt foo}}}} "#1"
+  ? {uplevel #0 { apply {{} {
+    namespace eval ::ns1 {
+      namespace eval ns2 {
+        objekt foo
+      }
+    }
+  }}}} "#1"
+  namespace delete ::ns1
+
+  objekt public object method intercept args {
+    list [current method] {*}[next]
+  }
+  objekt object filters add intercept
+
+  ? {uplevel #0 {objekt foo}} "intercept #0"
+  ? {uplevel #0 {
+    namespace eval ::ns1 {
+      namespace eval ns2 {
+        objekt foo
+      }
+    }
+  }} "intercept #2"
+  namespace delete ::ns1
+
+  ? {uplevel #0 {apply {{} {objekt foo}}}} "intercept #1"
+  ? {uplevel #0 { apply {{} {
+    namespace eval ::ns1 {
+      namespace eval ns2 {
+        objekt foo
+      }
+    }
+  }}}} "intercept #1"
+  namespace delete ::ns1
+
+  objekt object mixins add [nx::Class new {
+    :public method foo {args} {
+      list [current method] {*}[next]
+    }
+  }]
+
+  ? {uplevel #0 {objekt foo}} "intercept foo #0"
+  ? {uplevel #0 {
+    namespace eval ::ns1 {
+      namespace eval ns2 {
+        objekt foo
+      }
+    }
+  }} "intercept foo #2"
+  namespace delete ::ns1
+
+  ? {uplevel #0 {apply {{} {objekt foo}}}} "intercept foo #1"
+  ? {uplevel #0 { apply {{} {
+    namespace eval ::ns1 {
+      namespace eval ns2 {
+        objekt foo
+      }
+    }
+  }}}} "intercept foo #1"
+  namespace delete ::ns1
+
+}
+
+nx::test case uplevel {
+  nx::Object create objekt
+  objekt public object method foo {} {
+    :uplevel {return -level 0 #[info level]}
+  }
+  ? {uplevel #0 {objekt foo}} "#0"
+
+}
+
+
 # Local variables:
 #    mode: tcl
 #    tcl-indent-level: 2
