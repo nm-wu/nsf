@@ -20711,7 +20711,7 @@ ComputeLevelObj(Tcl_Interp *interp, CallStackLevel level) {
 
   if (framePtr != NULL) {
     /*
-     * The call was from an nsf frame, return absolute frame number.
+     * The call was from an NSF frame, return absolute frame number.
      */
     char buffer[LONG_AS_STRING];
     int  l;
@@ -20721,7 +20721,12 @@ ComputeLevelObj(Tcl_Interp *interp, CallStackLevel level) {
     resultObj = Tcl_NewStringObj(buffer, l+1);
   } else {
     /*
-     * If not called from an nsf frame, return #0 as default.
+     * If not called from an NSF frame, return #0 as default.
+     * 
+     * TODO: With NsfCallStackFindCallingContext in place, this cannot (should
+     * not) be reachable. Need to check NsfCallStackFindActiveFrame. When in
+     * the "clear", provide for a warning here?
+     *
      */
     resultObj = Tcl_NewStringObj("#0", 2);
   }
