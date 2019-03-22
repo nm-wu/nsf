@@ -1732,7 +1732,7 @@ nx::test case uplevel {
   }} "intercept #2"
   namespace delete ::ns1
 
-    ? {uplevel #0 {apply {{} {objekt foo}}}} "intercept #1"
+  ? {uplevel #0 {apply {{} {objekt foo}}}} "intercept #1"
   ? {uplevel #0 { apply {{} {
     namespace eval ::ns1 {
       namespace eval ns2 {
@@ -1843,6 +1843,66 @@ nx::test case uplevel {
   }} "0 1"
   namespace delete ::ns1
   
+}
+
+nx::test case uplevel-method-signature {
+
+  nx::Object create objekt
+  objekt public object method foo {} {
+    concat \
+        [:uplevel return -level 0 "#\[info level\]"] \
+        [uplevel [current callinglevel] return -level 0 "#\[info level\]"]
+  }
+
+  ? {uplevel #0 { apply {{} {
+    namespace eval ::ns1 {
+      namespace eval ns2 {
+        objekt foo
+      }
+    }
+  }}}} "#1 #1"
+
+  objekt public object method foo {} {
+    :uplevel
+  }
+
+  ? {uplevel #0 {objekt foo}} {wrong # args: should be "::objekt uplevel ?level? command ?arg ...?"}
+
+  objekt public object method foo {} {
+    :uplevel 1
+  }
+
+  ? {uplevel #0 {objekt foo}} {wrong # args: should be "::objekt uplevel ?level? command ?arg ...?"}
+
+  objekt public object method foo {} {
+    :uplevel #1
+  }
+
+  ? {uplevel #0 {objekt foo}} {wrong # args: should be "::objekt uplevel ?level? command ?arg ...?"}
+
+  objekt public object method foo {} {
+    :uplevel 1 {return -level 0 #[info level]}
+  }
+
+  ? {uplevel #0 {objekt foo}} "#0"
+
+  objekt public object method foo {} {
+    :uplevel 1 return -level 0 "#\[info level\]"
+  }
+
+  ? {uplevel #0 {objekt foo}} "#0"
+
+  objekt public object method foo {} {
+    :uplevel #0 {return -level 0 #[info level]}
+  }
+  
+  ? {uplevel #0 {objekt foo}} "#0"
+  
+  objekt public object method foo {} {
+    :uplevel #0 return -level 0 "#\[info level\]"
+  }
+  
+  ? {uplevel #0 {objekt foo}} "#0"
 }
 
 
