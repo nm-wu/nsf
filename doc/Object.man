@@ -20,7 +20,7 @@ the corresponding reverse index}]
 [vset CMD "obj"]
 [vset MODIFIER "object"]
 
-[copyright {2014-16 Stefan Sobernig <stefan.sobernig@wu.ac.at>, Gustaf Neumann <gustaf.neumann@wu.ac.at>; available under the Creative Commons Attribution 3.0 Austria license (CC BY 3.0 AT).}]
+[copyright {2014-19 Stefan Sobernig <stefan.sobernig@wu.ac.at>, Gustaf Neumann <gustaf.neumann@wu.ac.at>; available under the Creative Commons Attribution 3.0 Austria license (CC BY 3.0 AT).}]
 
 [moddesc "NX API"]
 [titledesc {API reference of the base class in the NX object system}]
@@ -742,6 +742,55 @@ followed by the remainder of the original argument vector as a number
 of [arg arg] of the calling method invocation.
 
 [list_end]
+
+[cmd_def uplevel]
+
+[list_begin definitions]
+
+[call [arg obj] [method uplevel] [opt [arg level]] [arg arg1] [opt "[arg arg2] ..."]]
+
+Evaluate a script or a command at a different stack-frame
+level. Behaves like Tcl's [cmd uplevel], with the following
+important exceptions.
+
+[list_begin itemized]
+
+[item] If the [arg level] specifier is omitted, [method "uplevel"]
+will skip any auxiliary frames added to the stack by active [term "filter"]s and
+[term "mixin"]s.
+
+[item] If the [arg level] specifier is omitted, [method uplevel] gives
+preference to the innermost frame corresponding to a proc, method, or
+apply call. Any frames inbetween, incl. those of filters
+and mixins (see above), will be skipped.
+
+[item] If the [arg level] specifier is provided (relative, or
+absolute), [method "uplevel"] will move execution into the requested
+stack-frame level (incl. those introduced by active active [term "filter"]s and
+[term "mixin"]s), if valid.
+
+[list_end]
+
+[example { 
+  % nx::Object create ::obj
+  % ::obj public object method foo {varName} {
+      :uplevel set $varName 1; return
+  }
+  ::obj
+  % namespace eval ::ns1 {
+       ::obj foo BAR
+  }
+  % namespace eval ::ns1 {
+      info exists BAR
+  }
+  1 
+}]
+
+[list_end]
+
+Note, in the example above, [method "uplevel"] is guaranteed to
+resolve to the calling context of [method "foo"] ([term "ns1"]) despite
+mixins and filters being (potentially) registered on [cmd "obj"].
 
 [cmd_def variable]
 
