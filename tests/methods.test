@@ -1905,6 +1905,53 @@ nx::test case uplevel-method-signature {
   ? {uplevel #0 {objekt foo}} "#0"
 }
 
+nx::test case upvar-method-signature {
+
+  Object create objekt
+  objekt public object method foo {} {
+    :upvar #1;
+  }
+
+  ? {uplevel #0 {objekt foo}} \
+      {wrong # args: should be "::objekt upvar ?level? otherVar localVar ?otherVar localVar ...?"}
+
+  objekt public object method foo {} {
+    :upvar 1;
+  }
+
+  ? {uplevel #0 {objekt foo}} \
+      {wrong # args: should be "::objekt upvar ?level? otherVar localVar ?otherVar localVar ...?"}
+
+  objekt public object method foo {} {
+    :upvar;
+  }
+
+  ? {uplevel #0 {objekt foo}} \
+      {wrong # args: should be "::objekt upvar ?level? otherVar localVar ?otherVar localVar ...?"}
+
+  objekt public object method foo {} {
+    :upvar x z;
+    set z 5
+  }
+
+  ? {uplevel #0 {objekt foo; set x}} 5
+
+  objekt public object method foo {} {
+    :upvar #5 x z;
+  }
+
+  ? {uplevel #0 {objekt foo}} \
+      {bad level "#5"}
+
+  objekt public object method foo {} {
+    :upvar #5 x z y;
+    set x 1
+  }
+
+  ? {uplevel #0 {apply {{} {objekt foo; info exists "#5"}}}} 1
+}
+
+
 
 # Local variables:
 #    mode: tcl

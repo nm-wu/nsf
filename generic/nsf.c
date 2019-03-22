@@ -32424,11 +32424,24 @@ NsfOUpvarMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *const 
   nonnull_assert(interp != NULL);
   nonnull_assert(object != NULL);
 
+  if (objc < 3) {
+    return NsfPrintError(interp,
+                         "wrong # args: should be \"%s %s "
+                         "?level? otherVar localVar ?otherVar localVar ...?\"",
+                         ObjectName(object),
+                         NsfMethodName(objv[0]));
+  }
+  
   if (objc % 2 == 0) {
-    frameInfoObj = NULL;
+    /* even number of arguments (incl. method) 
+     * -> level specifier considered present 
+     */
     frameInfo = ObjStr(objv[1]);
     i = 2;
   } else {
+    /* odd number of arguments (incl. method) 
+     * -> level specififer considered absent, compute jump level 
+     */
     frameInfoObj = ComputeLevelObj(interp, CALLING_LEVEL);
     INCR_REF_COUNT(frameInfoObj);
     frameInfo = ObjStr(frameInfoObj);
@@ -32438,7 +32451,7 @@ NsfOUpvarMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *const 
   if ((object->filterStack != NULL) || (object->mixinStack != NULL)) {
     CallStackUseActiveFrame(interp, &ctx);
   }
-
+  
   for ( ;  i < objc;  i += 2) {
     result = Tcl_UpVar2(interp, frameInfo, ObjStr(objv[i]), NULL,
                         ObjStr(objv[i+1]), 0 /*flags*/);
@@ -32452,6 +32465,7 @@ NsfOUpvarMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *const 
   }
   CallStackRestoreSavedFrames(interp, &ctx);
   return result;
+  
 }
 
 /*
