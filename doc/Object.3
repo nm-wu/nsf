@@ -348,6 +348,8 @@ nx::Object \- API reference of the base class in the NX object system
 .sp
 \fIobj\fR \fBuplevel\fR ?\fIlevel\fR? \fIarg1\fR ?\fIarg2\fR \&.\&.\&.?
 .sp
+\fIobj\fR \fBupvar\fR ?\fIlevel\fR? \fIotherVar1\fR \fIlocalVar1\fR ?\fIotherVar2\fR \fIlocalVar2\fR \&.\&.\&.?
+.sp
 \fIobj\fR \fBobject variable\fR ?\fB-accessor\fR \fBpublic\fR | \fBprotected\fR | \fBprivate\fR? ?\fB-incremental\fR? ?\fB-class\fR \fIclassName\fR? ?\fB-configurable\fR \fItrueFalse\fR? ?\fB-initblock\fR \fIscript\fR? ?\fB-trace\fR \fBset\fR | \fBget\fR | \fBdefault\fR? ?\fB-nocomplain\fR? \fIspec\fR ?\fIdefaultValue\fR?
 .sp
 .BE
@@ -1409,13 +1411,14 @@ important exceptions\&.
 .RS
 .IP \(bu
 If the \fIlevel\fR specifier is omitted, \fBuplevel\fR
-will skip any auxiliary frames added to the stack by active filters and
-mixins\&.
+will skip any auxiliary frames added to the stack by active filters and mixins\&. The
+resulting stack-frame level corresponds to the callinglevel
+as indicated by \fBnx::current\fR\&.
 .IP \(bu
 If the \fIlevel\fR specifier is omitted, \fBuplevel\fR gives
-preference to the innermost frame corresponding to a proc, method, or
-apply call\&. Any frames inbetween, incl\&. those of filters
-and mixins (see above), will be skipped\&.
+preference to the innermost enclosing procedure call, i\&.e\&., a frame
+corresponding to a proc, method, or apply call\&. Any frames inbetween,
+incl\&. those of filters and mixins (see above), will be skipped\&.
 .IP \(bu
 If the \fIlevel\fR specifier is provided (relative, or
 absolute), \fBuplevel\fR will move execution into the requested
@@ -1426,10 +1429,11 @@ mixins), if valid\&.
 
 
   % nx::Object create ::obj
+  ::obj
   % ::obj public object method foo {varName} {
       :uplevel set $varName 1; return
   }
-  ::obj
+  ::obj::foo
   % namespace eval ::ns1 {
        ::obj foo BAR
   }
@@ -1442,6 +1446,54 @@ mixins), if valid\&.
 .RE
 .IP
 Note, in the example above, \fBuplevel\fR is guaranteed to
+resolve to the calling context of \fBfoo\fR (ns1) despite
+mixins and filters being (potentially) registered on \fBobj\fR\&.
+.TP
+\fBupvar\fR
+.RS
+.TP
+\fIobj\fR \fBupvar\fR ?\fIlevel\fR? \fIotherVar1\fR \fIlocalVar1\fR ?\fIotherVar2\fR \fIlocalVar2\fR \&.\&.\&.?
+Links one or more local variables to variables defined for other
+scopes (namespaces, objects, call frames)\&. Behaves like Tcl's \fBupvar\fR,
+with the following important exceptions\&.
+.RS
+.IP \(bu
+If the \fIlevel\fR specifier is omitted, \fBupvar\fR
+will skip any auxiliary frames added to the stack by active filters and mixins\&. The
+resulting stack-frame level corresponds to the callinglevel
+as indicated by \fBnx::current\fR\&.
+.IP \(bu
+If the \fIlevel\fR specifier is omitted, \fBupvar\fR gives
+preference to the innermost enclosing procedure call, i\&.e\&., a frame
+corresponding to a proc, method, or apply call\&. Any frames inbetween,
+incl\&. those of filters and mixins (see above), will be skipped\&.
+.IP \(bu
+If the \fIlevel\fR specifier is provided (relative, or
+absolute), \fBupvar\fR will link into the requested
+stack-frame level (incl\&. those introduced by active active filters and
+mixins), if valid\&.
+.RE
+.CS
+
+
+  % nx::Object create ::obj
+  ::obj
+  % ::obj public object method foo {varName} {
+      :upvar $varName x; set x 1; return
+  }
+  ::obj::foo
+  % namespace eval ::ns1 {
+       ::obj foo BAR
+  }
+  % namespace eval ::ns1 {
+      info exists BAR
+  }
+  1
+
+.CE
+.RE
+.IP
+Note, in the example above, \fBupvar\fR is guaranteed to
 resolve to the calling context of \fBfoo\fR (ns1) despite
 mixins and filters being (potentially) registered on \fBobj\fR\&.
 .TP
