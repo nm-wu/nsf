@@ -32344,53 +32344,41 @@ NsfOUplevelMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *cons
   nonnull_assert(interp != NULL);
   nonnull_assert(objv != NULL);
 
-   if (objc < 2) {
-     wrongArgs:
-     return NsfPrintError(interp,
-                          "wrong # args: should be \"%s %s ?level? command ?arg ...?\"",
-                          ObjectName(object),
-                          NsfMethodName(objv[0]));
-   }
-
-   result = TclObjGetFrame(interp, objv[1], &requestedFramePtr);
-   if (unlikely(result == -1)) {
-     return TCL_ERROR;
-    }
-<<<<<<< HEAD
-    framePtr = (Tcl_CallFrame *)cf;
-    i = result+1;
-  } else {
-    framePtr = NULL;
-    i = 1;
+  if (objc < 2) {
+    wrongArgs:
+    return NsfPrintError(interp,
+                         "wrong # args: should be \"%s %s ?level? command ?arg ...?\"",
+                         ObjectName(object),
+                         NsfMethodName(objv[0]));
   }
 
-  objc -= i;
-  objv += i;
-=======
-    objc -= result + 1;
-    if (objc == 0) {
-        goto wrongArgs;
-    }
-    objv += result + 1;
->>>>>>> * nsf.c, methods.test (NsfOUplevelMethod): Fix argument handling
+  result = TclObjGetFrame(interp, objv[1], &requestedFramePtr);
+  if (unlikely(result == -1)) {
+    return TCL_ERROR;
+  }
+  objc -= result + 1;
+  if (objc == 0) {
+    goto wrongArgs;
+  }
+  objv += result + 1;
 
-    if (result == 0) {
-      /* 0 is returned from TclObjGetFrame when no (or, an invalid) level specifier was provided */
-      Tcl_CallFrame *callingFramePtr = NULL;
-      NsfCallStackFindCallingContext(interp, 1, &framePtr, &callingFramePtr);
-      if (framePtr == NULL) {
-        /* no proc frame was found, default to parent frame */
-        framePtr = callingFramePtr;
-      }
-    } else {
-      /* use the requested frame corresponding to the (valid) level specifier */
-      framePtr = (Tcl_CallFrame *)requestedFramePtr;
+  if (result == 0) {
+    /* 0 is returned from TclObjGetFrame when no (or, an invalid) level specifier was provided */
+    Tcl_CallFrame *callingFramePtr = NULL;
+    NsfCallStackFindCallingContext(interp, 1, &framePtr, &callingFramePtr);
+    if (framePtr == NULL) {
+      /* no proc frame was found, default to parent frame */
+      framePtr = callingFramePtr;
     }
+  } else {
+    /* use the requested frame corresponding to the (valid) level specifier */
+    framePtr = (Tcl_CallFrame *)requestedFramePtr;
+  }
 
-    assert(framePtr != NULL);
+  assert(framePtr != NULL);
     
-    savedVarFramePtr = (Tcl_CallFrame *)Tcl_Interp_varFramePtr(interp);
-    Tcl_Interp_varFramePtr(interp) = (CallFrame *)framePtr;
+  savedVarFramePtr = (Tcl_CallFrame *)Tcl_Interp_varFramePtr(interp);
+  Tcl_Interp_varFramePtr(interp) = (CallFrame *)framePtr;
 
   /*
    * Execute the residual arguments as a command.
@@ -32407,10 +32395,11 @@ NsfOUplevelMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *cons
     Tcl_Obj *objPtr = Tcl_ConcatObj(objc, objv);
     result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
   }
+
   if (unlikely(result == TCL_ERROR)) {
     Tcl_AppendObjToErrorInfo(interp,
-       Tcl_ObjPrintf("\n    (\"uplevel\" body line %d)",
-                     Tcl_GetErrorLine(interp)));
+                             Tcl_ObjPrintf("\n    (\"uplevel\" body line %d)",
+                                           Tcl_GetErrorLine(interp)));
   }
 
   /*
