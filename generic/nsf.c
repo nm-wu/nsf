@@ -32441,6 +32441,7 @@ NsfOUpvarMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *const 
     /* even number of arguments (incl. method) 
      * -> level specifier considered present 
      */
+    frameInfoObj = NULL;
     frameInfo = ObjStr(objv[1]);
     i = 2;
   } else {
