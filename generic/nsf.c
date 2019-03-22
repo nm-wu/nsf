@@ -20699,7 +20699,6 @@ ComputeLevelObj(Tcl_Interp *interp, CallStackLevel level) {
     if (framePtr == NULL) {
       framePtr = callingFramePtr;
     }
-    // NsfCallStackFindLastInvocation(interp, 1, &framePtr);
     break;
   }
   case ACTIVE_LEVEL:
