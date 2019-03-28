@@ -33,7 +33,7 @@ nx::test case class-level {
     # a non-configurable property is a variable
     :property -accessor none -configurable false {vf vf1}
     
-    :public method call-local {v} {: -local $v get}
+    :public method call-local {v {what get}} {: -local $v $what}
     
     :create c1
   }
@@ -112,11 +112,16 @@ nx::test case class-level {
   
   ? {c1 eval "info exists :a"} 1
   ? {c1 eval "info exists :b"} 1
+  ? {c1 b exists} 1
   ? {c1 eval "info exists :c"} 1
+  ? {c1 eval {:c exists}} 1
   ? {c1 eval "info exists :d"} 0
+  ? {c1 call-local d exists} 0
   ? {c1 eval "info exists :va"} 1
   ? {c1 eval "info exists :vb"} 1
+  ? {c1 vb exists} 1
   ? {c1 eval "info exists :vc"} 1
+  ? {c1 eval {:vc exists}} 1
   ? {c1 eval "info exists :vd"} 0
   ? {c1 eval "info exists :ve"} 1
   ? {c1 eval "info exists :vf"} 1
@@ -288,11 +293,15 @@ nx::test case class-level-incremental {
   
   ? {c1 eval "info exists :a"} 1
   ? {c1 eval "info exists :b"} 1
+  ? {c1 b exists} 1
   ? {c1 eval "info exists :c"} 1
+  ? {c1 eval {:b exists}} 1
   ? {c1 eval "info exists :d"} 0
   ? {c1 eval "info exists :va"} 1
   ? {c1 eval "info exists :vb"} 1
+  ? {c1 vb exists} 1
   ? {c1 eval "info exists :vc"} 1
+  ? {c1 eval {:vc exists}} 1
   ? {c1 eval "info exists :vd"} 0
 
   #
