@@ -1,5 +1,5 @@
-# linux: http://kitcreator.rkeene.org/kits/840dec4286102c869d85bae3b0dcd32565e7bf12/tclkit
-# osx: http://kitcreator.rkeene.org/kits/6967b89da1f6af7b12cdc82819f3bdb13a661242/tclkit
+# linux: https://kitcreator.rkeene.org/kits/840dec4286102c869d85bae3b0dcd32565e7bf12/tclkit
+# osx: https://kitcreator.rkeene.org/kits/6967b89da1f6af7b12cdc82819f3bdb13a661242/tclkit
 
 package require http
 package require tar
@@ -7,6 +7,7 @@ package require platform
 
 proc ::build {HOMEDIR BUILDDIR TCLTAG {TOOLCHAIN autoconf-tea}} {
   set tarball "tcl.tar.gz"
+  set INSTALLDIR [file join $HOMEDIR install]
 
   cd $HOMEDIR
   
@@ -49,15 +50,29 @@ proc ::build {HOMEDIR BUILDDIR TCLTAG {TOOLCHAIN autoconf-tea}} {
   # exec >@stdout 2>@stderr bash -lc "echo \$PATH"
   # exec >@stdout 2>@stderr bash -lc "cd && pwd"
   # exec >@stdout 2>@stderr bash -lc "cd && ls -la"
-
+  
   switch -exact -- $TOOLCHAIN {
     autoconf-tea {
       exec >@stdout 2>@stderr bash -lc "./configure --libdir=$tclDir --enable-64bit"
       exec >@stdout 2>@stderr bash -lc "make"
       
       cd $BUILDDIR
-      exec >@stdout 2>@stderr bash -lc "./configure --with-tcl=$tclDir"
-      exec >@stdout 2>@stderr bash -lc "make test"
+      # puts BUILDDIR=$BUILDDIR,PWD=[pwd],INSTALLDIR=$INSTALLDIR
+      # exec >@stdout 2>@stderr bash -lc "./configure --with-tcl=$tclDir"
+      exec >@stdout 2>@stderr bash -lc "./configure --prefix=$INSTALLDIR --exec-prefix=$INSTALLDIR --with-tcl=$tclDir"
+      try {
+        exec >@stdout 2>@stderr bash -lc "make test"
+      } trap CHILDSTATUS {- opts} {
+        lassign [dict get $opts -errorcode] -> pid code
+        # when make encountered a build error, we expect to see an
+        # error code of 2. Any other, non-make error code will be
+        # ignored for the time being; assuming the test suite
+        # completed.
+        if {$code == 2} {exit 1}
+        puts stderr "WARNING: make failed with unexpected error code: $opts"
+      }
+
+      exec >@stdout 2>@stderr bash -lc "make install"
     }
     nmake-tea {
       exec >@stdout 2>@stderr nmake -nologo -f makefile.vc TCLDIR=$tclRoot release
@@ -66,6 +81,7 @@ proc ::build {HOMEDIR BUILDDIR TCLTAG {TOOLCHAIN autoconf-tea}} {
       
       exec >@stdout 2>@stderr nmake -nologo -f makefile.vc TCLDIR=$tclRoot all
       exec >@stdout 2>@stderr nmake -nologo -f makefile.vc TCLDIR=$tclRoot test
+      exec >@stdout 2>@stderr nmake -nologo -f makefile.vc TCLDIR=$tclRoot install INSTALLDIR=$INSTALLDIR
     }
     default {
       throw [list BUILD UNSUPPORTED $TOOLCHAIN] \
