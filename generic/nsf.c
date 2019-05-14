@@ -32428,6 +32428,29 @@ objectMethod uplevel NsfOUplevelMethod {
   {-argName "args" -type allargs}
 }
 */
+
+static int
+NsfOUplevelFinalize(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    CallFrame *savedVarFramePtr = data[0];
+
+    if (unlikely(result == TCL_ERROR)) {
+      Tcl_AppendObjToErrorInfo(interp,
+                               Tcl_ObjPrintf("\n    (\"uplevel\" body line %d)",
+                                             Tcl_GetErrorLine(interp)));
+    }
+    
+    /*
+     * Restore the variable frame, and return.
+     */
+    Tcl_Interp_varFramePtr(interp) = (CallFrame *)savedVarFramePtr;
+    
+    return result;
+}
+
 static int
 NsfOUplevelMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *const objv[]) {
   int        result, getFrameResult = 0;
@@ -32461,6 +32484,7 @@ NsfOUplevelMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *cons
 
   if (likely(result == TCL_OK)) {
     Tcl_CallFrame *framePtr, *savedVarFramePtr;
+    Tcl_Obj *objPtr;
 
     objc -= getFrameResult + 1;
     objv += getFrameResult + 1;
@@ -32499,28 +32523,29 @@ NsfOUplevelMethod(Tcl_Interp *interp, NsfObject *object, int objc, Tcl_Obj *cons
      */
 
     if (objc == 1) {
-      result = Tcl_EvalObjEx(interp, objv[0], TCL_EVAL_DIRECT);
+      objPtr = objv[0];
     } else {
       /*
        * More than one argument: concatenate them together with spaces
        * between, then evaluate the result.  Tcl_EvalObjEx will delete
        * the object when it decrements its refCount after eval'ing it.
        */
-      Tcl_Obj *objPtr = Tcl_ConcatObj(objc, objv);
+      objPtr = Tcl_ConcatObj(objc, objv);
+    }
 
+#if defined(NRE)
+    Tcl_NRAddCallback(interp, NsfOUplevelFinalize, savedVarFramePtr, NULL, NULL,
+                     NULL);
+    result = TclNREvalObjEx(interp, objPtr, 0, NULL, 0);
+#else
+    {
+      ClientData data[1] = {
+        (ClientData)savedVarFramePtr
+      };
       result = Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_DIRECT);
+      result = NsfOUplevelFinalize(data, interp, result);
     }
-
-    if (unlikely(result == TCL_ERROR)) {
-      Tcl_AppendObjToErrorInfo(interp,
-                               Tcl_ObjPrintf("\n    (\"uplevel\" body line %d)",
-                                             Tcl_GetErrorLine(interp)));
-    }
-
-    /*
-     * Restore the variable frame, and return.
-     */
-    Tcl_Interp_varFramePtr(interp) = (CallFrame *)savedVarFramePtr;
+#endif
   }
 
   return result;
