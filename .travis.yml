@@ -29,18 +29,18 @@ matrix:
             - g++-7
       env: TCLTAG=core-8-branch
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       compiler: clang
       env: TCLTAG=core-8-branch
     - os: osx
-      osx_image: xcode10.2	
-      compiler: gcc-8
+      osx_image: xcode11.3	
+      compiler: gcc-9
       env: TCLTAG=core-8-branch
      # ----------------------------
     - os: linux
       dist: xenial
       compiler: clang
-      env: TCLTAG=core-8-7-a1
+      env: TCLTAG=core-8-7-a3
     - os: linux
       dist: xenial
       compiler: gcc-7
@@ -50,15 +50,15 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-      env: TCLTAG=core-8-7-a1
+      env: TCLTAG=core-8-7-a3
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       compiler: clang
-      env: TCLTAG=core-8-7-a1
+      env: TCLTAG=core-8-7-a3
     - os: osx
-      osx_image: xcode10.2	
-      compiler: gcc-8
-      env: TCLTAG=core-8-7-a1
+      osx_image: xcode11.3	
+      compiler: gcc-9
+      env: TCLTAG=core-8-7-a3
     # ----------------------------
     - os: linux
       dist: xenial
@@ -75,12 +75,12 @@ matrix:
             - g++-7
       env: TCLTAG=core-8-5-19
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       compiler: clang
       env: TCLTAG=core-8-5-19
     - os: osx
-      osx_image: xcode10.2	
-      compiler: gcc-8
+      osx_image: xcode11.3	
+      compiler: gcc-9
       env:
        -  TCLTAG=core-8-5-19
    # ----------------------------
@@ -99,19 +99,19 @@ matrix:
             - g++-7
       env: TCLTAG=core-8-5-branch
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       compiler: clang
       env: TCLTAG=core-8-5-branch
     - os: osx
-      osx_image: xcode10.2	
-      compiler: gcc-8
+      osx_image: xcode11.3	
+      compiler: gcc-9
       env:
         - TCLTAG=core-8-5-branch
   # ----------------------------
     - os: linux
       dist: xenial
       compiler: clang
-      env: TCLTAG=core-8-6-9
+      env: TCLTAG=core-8-6-10
     - os: linux
       dist: xenial
       compiler: gcc-7
@@ -121,16 +121,16 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-      env: TCLTAG=core-8-6-9
+      env: TCLTAG=core-8-6-10
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       compiler: clang
-      env: TCLTAG=core-8-6-9
+      env: TCLTAG=core-8-6-10
     - os: osx
-      osx_image: xcode10.2	
-      compiler: gcc-8
+      osx_image: xcode11.3	
+      compiler: gcc-9
       env:
-        - TCLTAG=core-8-6-9
+        - TCLTAG=core-8-6-10
   # ----------------------------
     - os: linux
       dist: xenial
@@ -147,12 +147,12 @@ matrix:
             - g++-7
       env: TCLTAG=core-8-6-branch
     - os: osx
-      osx_image: xcode10.2
+      osx_image: xcode11.3
       compiler: clang
       env: TCLTAG=core-8-6-branch
     - os: osx
-      osx_image: xcode10.2	
-      compiler: gcc-8
+      osx_image: xcode11.3	
+      compiler: gcc-9
       env: TCLTAG=core-8-6-branch
   allow_failures:
   - env: TCLTAG=core-8-6-branch
@@ -170,8 +170,8 @@ before_install:
   found, continuing" ; fi
 install:
 - mkdir -p $KITS
-- if [ $TRAVIS_OS_NAME = linux ]; then URL=http://kitcreator.rkeene.org/kits/840dec4286102c869d85bae3b0dcd32565e7bf12/tclkit;
-  else URL=http://kitcreator.rkeene.org/kits/6967b89da1f6af7b12cdc82819f3bdb13a661242/tclkit;
+- if [ $TRAVIS_OS_NAME = linux ]; then URL=http://kitcreator.rkeene.org/kits/c8fe6fba3323b12b924b4a0716609abbaa00822c/tclkit;
+  else URL=http://kitcreator.rkeene.org/kits/31eaf9ae17e769609700b41d1d3c9abeda27510d/tclkit;
   fi
 - if [ ! -f ${KITS}/tclkit.$TRAVIS_OS_NAME ]; then wget -O ${KITS}/tclkit.$TRAVIS_OS_NAME
   $URL && chmod +x ${KITS}/tclkit.$TRAVIS_OS_NAME; fi
