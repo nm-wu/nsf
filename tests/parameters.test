@@ -149,8 +149,8 @@ nx::test case parametercheck {
   # do not allow "currently unknown" user defined types in parametercheck
   ? {::nsf::is -complain in1 aaa} {invalid value constraints "in1"}
 
-  ? {::nsf::is -complain lower c} 1 "lower case char"
-  ? {::nsf::is -complain lower abc} 1 "lower case chars"
+  ? {::nsf::is -complain lower c} 1 "lowercase char"
+  ? {::nsf::is -complain lower abc} 1 "lowercase chars"
   ? {::nsf::is -complain lower Abc} {expected lower but got "Abc"}
   ? {string is lower abc} 1 "tcl command 'string is lower'"
 
@@ -671,7 +671,7 @@ nx::test case user-value-checker {
 
   #
   # Create a user-defined value-checker for method parameters,
-  # with a extra argument
+  # with an extra argument
   #
   ::nx::methodParameterSlot object method type=in {name value arg} {
     if {$value ni [split $arg |]} {
@@ -1852,7 +1852,7 @@ nx::test case req-param {
   # Did the object survive the error? Should not.
   ? {::nsf::is object c2} 0
 
-  # The following should run through without erros
+  # The following should run through without errors
   ? {C create c3 -y 1 -x 0} "::c3"
   ? {set ::_} "passed args ''"
   ? {c3 cget -x} "0"

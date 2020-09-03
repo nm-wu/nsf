@@ -1,5 +1,5 @@
 #
-# Zip file generator - Create a Zip-file from a list of input file names
+# Zip file generator - Create a Zip-file from a list of input filenames
 #
 # This implementation is based on the zip file builder of Artur
 # Trzewik (https://wiki.tcl-lang.org/15158), but was simplified, refactored,
@@ -38,7 +38,7 @@ namespace eval ::nx::zip {
     #
 
     #
-    # Add a file from the file system to the zip archive
+    # Add a file from the filesystem to the zip archive
     #
     :public method addFile {inputFileName outputFileName:optional} {
       # inputFileName - source file to archive
@@ -108,7 +108,7 @@ namespace eval ::nx::zip {
 
         # For every file, it contains again part of the information of
         # the local file headers, but with some additional information
-        # such as a the "version made by", comment, ...
+        # such as the "version made by", comment, ...
 
         set comment ""
         set platform 0 ;# dos/windows
@@ -136,7 +136,7 @@ namespace eval ::nx::zip {
 
         # relative offset of local header
         :writeLong $(offset)
-        # file name
+        # filename
         :writeString $(fileNameInternal)
 
         :writeExtraFieldUPATH $(fileName) $(fileNameInternal)
@@ -243,7 +243,7 @@ namespace eval ::nx::zip {
 
       :writeFileHeaderBlock [array get ""]
 
-      # file name
+      # filename
       :writeString $(fileNameInternal)
 
       :writeExtraFieldUPATH $(fileName) $(fileNameInternal)
@@ -276,7 +276,7 @@ namespace eval ::nx::zip {
       :writeLong $(csize)
       :writeLong $(size)
 
-      # file name length
+      # filename length
       :writeShort [string length $(fileNameInternal)]
 
       # extra field length
@@ -284,7 +284,7 @@ namespace eval ::nx::zip {
     }
 
     #
-    # Convert the provided time stamp to DOS time.
+    # Convert the provided timestamp to DOS time.
     #
     :method toDosTime {time} {
       foreach {year month day hour minute second} \

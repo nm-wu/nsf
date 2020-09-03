@@ -5,7 +5,7 @@
  *      for supporting language-oriented programming.  For details, see
  *      https://next-scripting.org/.
  *
- * Copyright (C) 1999-2019 Gustaf Neumann (a) (b)
+ * Copyright (C) 1999-2020 Gustaf Neumann (a) (b)
  * Copyright (C) 1999-2007 Uwe Zdun (a) (b)
  * Copyright (C) 2007-2008 Martin Matuska (b)
  * Copyright (C) 2010-2019 Stefan Sobernig (b)
@@ -126,7 +126,7 @@ typedef struct NsfProcContext {
 /*
  * TclCmdClientdata is an incomplete type containing the common
  * field(s) of ForwardCmdClientData, AliasCmdClientData and
- * SetterCmdClientData used for filling in at runtime the actual
+ * SetterCmdClientData used for filling in at run time the actual
  * object.
  */
 typedef struct TclCmdClientData {
@@ -220,7 +220,8 @@ static Tcl_ObjType CONST86
   *Nsf_OT_intType = NULL,
   *Nsf_OT_parsedVarNameType = NULL,
   *Nsf_OT_byteArrayType = NULL,
-  *Nsf_OT_properByteArrayType = NULL;
+  *Nsf_OT_properByteArrayType = NULL,
+  *Nsf_OT_bignumType = NULL;
 
 /*
  * Function prototypes
@@ -974,7 +975,7 @@ ParseContextInit(
  *
  * ParseContextExtendObjv --
  *
- *      Extend Tcl_Obj array at runtime, when more elements are
+ *      Extend Tcl_Obj array at run time, when more elements are
  *      needed. This function is called to extend an already
  *      initialized ParseContext.
  *
@@ -2656,7 +2657,7 @@ NsfClassListUnlink(NsfClasses **firstPtrPtr, const void *key) {
     NsfClasses *prevPtr = NULL;
 
     /*
-     * List is non-empty.
+     * List is nonempty.
      */
     for (entryPtr = *firstPtrPtr;
          entryPtr != NULL;
@@ -2818,12 +2819,12 @@ MustBeBefore(const NsfClass *aClass, const NsfClass *bClass, const NsfClasses *s
   assert(bClass->order != NULL);
 
   /*
-   * Check whether a is in the precedence order of b. E.g.
+   * Check whether "x" is in the precedence order of "y". E.g.
    *
-   *   a c1 object
-   *   b c2 a object
+   *   x c1 object
+   *   y c2 x object
    *
-   * If so then b must be before a to preserve the precedence order based on
+   * If so then "y" must be before "x" to preserve the precedence order based on
    * single inheritance (monotonicity).
    */
   success = (NsfClassListFind(bClass->order, aClass) != NULL);
@@ -6913,7 +6914,7 @@ NSCheckNamespace(
   /*fprintf(stderr, "NSCheckNamespace %s parentNsPtr %p\n", nameString, parentNsPtr);*/
 
   /*
-   * Check whether there is a already a namespace for the full name. The
+   * Check whether there is an already a namespace for the full name. The
    * namespace will be only in rare cases, but we have to make this check in
    * every case. If there is a full namespace, we can use it to determine the
    * parent name.
@@ -8488,7 +8489,7 @@ AssertionCheckList(Tcl_Interp *interp, NsfObject *object,
 
   /*
    * Do not check assertion modifying methods, otherwise we cannot react in
-   * catch on a runtime assertion check failure
+   * catch on a run time assertion check failure
    */
 
 #if 1
@@ -10809,7 +10810,7 @@ GuardAddFromDefinitionList(NsfCmdList *dest, Tcl_Command interceptorCmd,
  *----------------------------------------------------------------------
  * GuardAddInheritedGuards --
  *
- *    Add a inherited guards to the provided destination list.
+ *    Add an inherited guards to the provided destination list.
  *
  * Results:
  *    None.
@@ -15974,7 +15975,7 @@ DispatchDestroyMethod(Tcl_Interp *interp, NsfObject *object, unsigned int flags)
   if (unlikely(rst == NULL)) {
 
     /*
-     * There is no runtime state in this interpreter.
+     * There is no run time state in this interpreter.
      */
     if ((Tcl_Interp_flags(interp) & DELETED)) {
 
@@ -15984,7 +15985,7 @@ DispatchDestroyMethod(Tcl_Interp *interp, NsfObject *object, unsigned int flags)
       result = TCL_OK;
     } else {
       /*
-       * In all other cases we expect a runtime state. If this is violated,
+       * In all other cases we expect a run time state. If this is violated,
        * something substantial must be wrong, so panic.
        */
 
@@ -16652,7 +16653,28 @@ Nsf_ConvertToInt32(Tcl_Interp *interp, Tcl_Obj *objPtr,  const Nsf_Param *pPtr,
  *----------------------------------------------------------------------
  */
 
-#include <tclTomMath.h>
+#if TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
+/*
+ * Starting with Tcl 8.7a4 and TIP 538, NSF might end up built against Tcl
+ * linking against a system-wide/ external libtommath, rather than with an
+ * embedded libtommath. In both cases, even the embedded one, Tcl does not
+ * ship tommat.h anymore. This leaves NSF without the necessary build-time
+ * definitions for mp_int and mp_clear (see below). For the time being, we
+ * rely on a hot fix by the TIP 538 author, providing compat definitions when
+ * setting the TCL_NO_TOMMATH_H macro before including tclTomMath.h.
+ *
+ * See https://core.tcl-lang.org/tcl/tktview?name=4663e0636f (also for other
+ * mid-term options)
+ */
+//#define TCL_NO_TOMMATH_H 1
+# ifndef MP_INT_DECLARED
+typedef size_t mp_int[4];
+# endif
+#else
+# include <tclTomMath.h>
+#endif
+
+
 int Nsf_ConvertToInteger(Tcl_Interp *interp, Tcl_Obj *objPtr,  const Nsf_Param *pPtr,
                      ClientData *clientData, Tcl_Obj **outObjPtr)
   nonnull(1) nonnull(2) nonnull(3) nonnull(4) nonnull(5);
@@ -16671,7 +16693,7 @@ Nsf_ConvertToInteger(Tcl_Interp *interp, Tcl_Obj *objPtr,  const Nsf_Param *pPtr
    * Try to short_cut common cases to avoid conversion to bignums, since
    * Tcl_GetBignumFromObj returns a value, which has to be freed.
    */
-  if (objPtr->typePtr == Nsf_OT_intType) {
+  if (objPtr->typePtr == Nsf_OT_intType || objPtr->typePtr == Nsf_OT_bignumType) {
     /*
      * We know already that the value is an int
      */
@@ -16682,7 +16704,9 @@ Nsf_ConvertToInteger(Tcl_Interp *interp, Tcl_Obj *objPtr,  const Nsf_Param *pPtr
      */
     result = TCL_ERROR;
   } else {
-    mp_int bignumValue;
+    long         longValue;
+    Tcl_WideInt  wideIntValue;
+    mp_int       bignumValue;
 
     /*
      * We have to figure out, whether the value is an int. We perform this
@@ -16691,12 +16715,19 @@ Nsf_ConvertToInteger(Tcl_Interp *interp, Tcl_Obj *objPtr,  const Nsf_Param *pPtr
      */
 
     /*if (objPtr->typePtr != NULL) {
-      fprintf(stderr, "type is on call %p %s value %s \n",
-          objPtr->typePtr, ObjTypeStr(objPtr), ObjStr(objPtr));
-          }*/
+      fprintf(stderr, "### type is on call %p %s value %s \n",
+              objPtr->typePtr, ObjTypeStr(objPtr), ObjStr(objPtr));
+              }*/
 
-    if ((result = Tcl_GetBignumFromObj(interp, objPtr, &bignumValue)) == TCL_OK) {
-      mp_clear(&bignumValue);
+    if ((result = Tcl_GetLongFromObj(interp, objPtr, &longValue)) == TCL_OK) {
+
+    } else if ((result = Tcl_GetWideIntFromObj(interp, objPtr, &wideIntValue)) == TCL_OK) {
+
+    } else if ((result = Tcl_GetBignumFromObj(interp, objPtr, &bignumValue)) == TCL_OK) {
+      Tcl_Obj *bigNumObj = Tcl_NewBignumObj(&bignumValue);
+
+      Tcl_DecrRefCount(bigNumObj);
+      /* fprintf(stderr, "### IS BIG %s\n", objPtr->typePtr->name); */
     }
   }
 
@@ -18146,7 +18177,7 @@ static int ParamDefsParse(Tcl_Interp *interp, Tcl_Obj *procNameObj, Tcl_Obj *par
  *    parameter forward the full cycle of
  *
  *     (a) splitting the spec,
- *     (b) convert it to a the client data structure,
+ *     (b) convert it to the client data structure,
  *     (c) invoke forward,
  *     (d) free client data structure
  *
@@ -18238,7 +18269,7 @@ ParameterMethodForwardDispatch(Tcl_Interp *interp, NsfObject *object,
  * ParameterMethodDispatch --
  *
  *    Dispatch a method provided via parameter definition. The function checks
- *    the parameter definition, builds a argument list for the function call
+ *    the parameter definition, builds an argument list for the function call
  *    and invokes finally the configured cmd.  This function is typically
  *    called from configure.
  *
@@ -20215,7 +20246,7 @@ NextGetArguments(
       nobjv = (Tcl_Obj **)ckalloc((unsigned)sizeof(Tcl_Obj *) * (unsigned)nobjc);
       MEM_COUNT_ALLOC("nextArgumentVector", nobjv);
       /*
-       * Copy the ensemble path name
+       * Copy the ensemble pathname
        */
       memcpy((char *)nobjv, cscPtr->objv, sizeof(Tcl_Obj *) * (size_t)methodNameLength);
 
@@ -22934,7 +22965,7 @@ NsfSetterMethod(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  *
  *    Helper function to print either an error message directly to call the
  *    forwarder specific callback method specified in
- *    tcd->onerror. Background: ForwardArg() is called at runtime to
+ *    tcd->onerror. Background: ForwardArg() is called at run time to
  *    substitute the argument list. Catching such errors is not conveniently
  *    doable via catch, since it would be necessary to wrap every possible
  *    usage of a forwarder in a catch. Therefore, the callback function can be
@@ -26364,9 +26395,8 @@ ProtectionMatches(CallprotectionIdx_t withCallprotection, Tcl_Command cmd) {
   case CallprotectionPublicIdx: result = (isProtected == 0); break;
   case CallprotectionProtectedIdx: result = (isProtected && !isPrivate); break;
   case CallprotectionPrivateIdx: result = isPrivate; break;
-  case CallprotectionNULL:
-    result = NSF_TRUE;
-    break;
+  case CallprotectionNULL: result = NSF_TRUE; break;
+  default: result = NSF_FALSE; break;
   }
   return result;
 }
@@ -28479,7 +28509,7 @@ NsfMethodAliasCmd(
   Tcl_Command         cmd, oldCmd, newCmd;
   Tcl_Namespace      *nsPtr;
   int                 result;
-  unsigned int        flags;
+  unsigned int        flags = 0u;
   const NsfClass     *class;
   NsfObject          *newTargetObject;
 
@@ -30503,7 +30533,7 @@ NsfRelationSetCmd(Tcl_Interp *interp, NsfObject *object, RelationtypeIdx_t type,
 
     /* TODO:
        Need to remove these properties?
-       Allow one to delete a class system at runtime?
+       Allow one to delete a class system at run time?
     */
     }
 
@@ -30578,7 +30608,7 @@ NsfRelationSetCmd(Tcl_Interp *interp, NsfObject *object, RelationtypeIdx_t type,
           CmdListAddSorted(&nclopt->isObjectMixinOf, object->id, NULL);
         } else {
           NsfLog(interp, NSF_LOG_WARN,
-                 "Problem registering %s as a object mixin of %s\n",
+                 "Problem registering %s as an object mixin of %s\n",
                  ObjStr(valueObj), ObjectName_(object));
         }
       }
@@ -35319,9 +35349,9 @@ ExitHandler(ClientData clientData) {
 #endif
 
   /*
-   * Free runtime state.
+   * Free run time state.
    */
-  /*fprintf(stderr, "+++ ExiHandler frees runtime state of interp %p\n", interp);*/
+  /*fprintf(stderr, "+++ ExiHandler frees run time state of interp %p\n", interp);*/
   ckfree((char *) rst);
 #if defined(USE_ASSOC_DATA)
   Tcl_DeleteAssocData(interp, "NsfRuntimeState");
@@ -35459,9 +35489,13 @@ Nsf_Init(
     if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
       return TCL_ERROR;
     }
+# if TCL_MAJOR_VERSION > 8 || TCL_MINOR_VERSION > 6
+    /* Tcl_TomMath_InitStubs() not needed */
+# else
     if (Tcl_TomMath_InitStubs(interp, "8.5") == NULL) {
       return TCL_ERROR;
     }
+# endif
     stubsInitialized = 1;
   }
 #endif
@@ -35518,6 +35552,15 @@ Nsf_Init(
 
   Nsf_OT_byteArrayType = Tcl_GetObjType("bytearray");
   assert(Nsf_OT_byteArrayType != NULL);
+
+  { mp_int bignumValue;
+
+    tmpObj = Tcl_NewStringObj("10000000000000000000000", -1);
+    Tcl_GetBignumFromObj(NULL, tmpObj, &bignumValue);
+    Nsf_OT_bignumType =  tmpObj->typePtr;
+    assert(Nsf_OT_bignumType != NULL);
+    Tcl_DecrRefCount(tmpObj);
+  }
 
   /*
    * Get bytearray and proper bytearray from Tcl (latter if available,
@@ -35690,7 +35733,7 @@ Nsf_Init(
    *  [info frame /number/] or TclInfoFrame()) without
    *  verification. However, NSF non-proc frames, in particular
    *  initcmd blocks, point to the fakeProc structure which does not
-   *  contain a initialized Command pointer. For now, we default to
+   *  contain an initialized Command pointer. For now, we default to
    *  an internal command. However, we might have to revisit this decision
    *  as non-proc frames (e.g., initcmds) report a "proc" entry
    *  for c-based functions with a proc scope, such as "::nsf::colon"),
@@ -35704,7 +35747,7 @@ Nsf_Init(
      * The file "predefined.h" contains some methods and library procs
      * implemented in Tcl - they could go in .tcl file, but they are embedded
      * here with Tcl_Eval to avoid the need to carry around a separate file at
-     * runtime.
+     * run time.
      */
 
 #include "predefined.h"
