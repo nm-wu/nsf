@@ -209,6 +209,10 @@ TCL_LIBS	= @TCL_LIBS@
 
 xotcl_pkglibdir	= $(pkglibdir)/xotcl
 
+XOTCL_SHELLS = xotclsh xowish
+NSF_SHELLS = nxsh nxwish
+SHELLS = $(NSF_SHELLS) $(XOTCL_SHELLS) 
+
 #========================================================================
 # TCLLIBPATH seeds the auto_path in Tcl's init.tcl so we can test our
 # package without installing.  The other environment variables allow us
@@ -479,7 +483,7 @@ install-xotcl-libraries: install-libraries
 	    $(INSTALL_DATA) $(xotcl_src_lib_dir)/$$i $(DESTDIR)$(xotcl_pkglibdir)/$$i ; \
 	done;
 
-install-xotcl-shells: xotclsh xowish
+install-xotcl-shells: $(XOTCL_SHELLS)
 	$(INSTALL_PROGRAM) xotclsh $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) xowish $(DESTDIR)$(bindir)
 
@@ -548,7 +552,7 @@ gdb:
 lldbtest:
 	$(MAKE) "TCLSH_PROG=lldb -b -o run -- $(TCLSH_PROG)" test
 
-test: binaries libraries test-core test-xotcl test-http @test_actiweb@
+test: binaries libraries $(SHELLS) test-core test-xotcl test-http @test_actiweb@
 	@if test ! "x$(subdirs)" = "x" ; then dirs="$(subdirs)" ; \
 	for dir in $$dirs ; do \
 	   if (cd $$dir; $(MAKE) $@) ; then true ; else exit 1 ; fi ; \
@@ -690,7 +694,7 @@ pkgIndex.tcl: $(PKG_LIB_FILE)
 install-pkgIndex:
 #	@echo package ifneeded nsf $(PACKAGE_VERSION) [list load [file join \$$dir .. "$(PKG_LIB_FILE)"] nsf] > "$(pkglibdir)/pkgIndex.tcl"
 
-nxsh nxwish xotclsh xowish:
+$(SHELLS):
 	$(TCLSH_PROG) $(top_builddir)/build.tcl $@ $@ 
 	chmod +x $@
 
@@ -706,7 +710,7 @@ nxsh nxwish xotclsh xowish:
 #		$(CFLAGS)  $(TCL_LIB_SPEC) $(TK_LIB_SPEC) \
 #		$(DMALLOC_LIB) $(CONDITIONAL_STUB_OBJECTS)
 
-install-shells: nxsh nxwish
+install-shells: $(NSF_SHELLS)
 	$(INSTALL_PROGRAM) nxsh $(DESTDIR)$(bindir)
 	$(INSTALL_PROGRAM) nxwish $(DESTDIR)$(bindir)
 
