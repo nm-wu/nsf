@@ -1,7 +1,7 @@
 /*
  * nsfCmdDefinitions.c --
  *
- *      Provide an API for registering method definitions and obtaining these
+ *      An API for registering method definitions and obtaining these
  *      meta-data for introspection. Method definitions are shared by all
  *      threads/interps. Access is governed by a mutex lock.
  *
@@ -49,7 +49,7 @@ static int Register(Tcl_Interp *interp, Nsf_methodDefinition *methodDefinition);
  *----------------------------------------------------------------------
  * Nsf_CmdDefinitionInit --
  *
- *    Initialize the hash-table structure for storing the method definitions.
+ *    Initializes the hash-table structure for storing the method definitions.
  *
  * Results:
  *    None.
@@ -75,7 +75,7 @@ Nsf_CmdDefinitionInit(void) {
 /*----------------------------------------------------------------------
  * Nsf_CmdDefinitionRelease --
  *
- *    Release and, eventually, delete the hash table for method definitions.
+ *    Releases and eventually deletes the hash table for method definitions.
  *
  * Results:
  *    None.
@@ -103,7 +103,7 @@ Nsf_CmdDefinitionRelease(void) {
  *----------------------------------------------------------------------
  * Nsf_CmdDefinitionRegister --
  *
- *    Register an array of cmd definitions
+ *    Registers an array of cmd definitions.
  *
  * Results:
  *    TCL_OK
@@ -131,7 +131,7 @@ Nsf_CmdDefinitionRegister(Tcl_Interp *interp, Nsf_methodDefinition *definitionRe
  *----------------------------------------------------------------------
  * Nsf_CmdDefinitionGet --
  *
- *    Obtain the definition for a previously registered proc.
+ *    Obtains the definition for a previously registered proc.
  *
  * Results:
  *    A pointer to a Method definition or NULL.
@@ -162,10 +162,10 @@ Nsf_CmdDefinitionGet(Tcl_ObjCmdProc *proc) {
  *----------------------------------------------------------------------
  * Register --
  *
- *    Register a method definition.
+ *    Registers a method definition.
  *
  * Results:
- *    Tcl result code.
+ *    A Tcl result code.
  *
  * Side effects:
  *    None.
