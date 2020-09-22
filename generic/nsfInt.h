@@ -170,8 +170,8 @@ typedef int bool;
 #define nonnull_assert(assertion) assert((assertion))
 
 /*
- * Trie to use gcc __attribute__ unused and mangle the name, so the
- * attribute could not be used, if declared as unused.
+ * Try to use gcc __attribute__ unused and mangle the name so an 
+ * attribute declared as unused can not be used.
  */
 #ifdef UNUSED
 #elif __GNUC_PREREQ(2, 7)
@@ -751,8 +751,8 @@ typedef struct NsfObjectSystem {
 /*
  * Next Scripting global names and strings
  *
- * We provide enums for efficient lookup for corresponding string
- * names and Tcl_Objs via global arrays. The "constant" Tcl_Objs are
+ * Enums for efficient lookup for corresponding strings
+ * Tcl_Objs via global arrays. The "constant" Tcl_Objs are
  * built at start-up-time via Nsf_Init().
  */
 
@@ -1379,8 +1379,8 @@ char *strnstr(const char *buffer, const char *needle, size_t buffer_len) NSF_pur
 #endif
 
 /*
- * There are six whitespace characters in Tcl, which serve as element
- * separators in string representations of Tcl lists. See tclUtil.c
+ * These six whitespace characters serve as element separators in string
+ * representations of lists. See tclUtil.c
  */
 
 #define NsfHasTclSpace(str) \

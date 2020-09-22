@@ -209,7 +209,9 @@ TCL_LIBS	= @TCL_LIBS@
 
 xotcl_pkglibdir	= $(pkglibdir)/xotcl
 
-installed_shells = $(DESTDIR)$(bindir)/nxsh $(DESTDIR)$(bindir)/nxwish $(DESTDIR)$(bindir)/xotclsh $(DESTDIR)$(bindir)/xowish
+XOTCL_SHELLS = xotclsh xowish
+NSF_SHELLS = nxsh nxwish
+SHELLS = $(NSF_SHELLS) $(XOTCL_SHELLS) 
 
 #========================================================================
 # TCLLIBPATH seeds the auto_path in Tcl's init.tcl so we can test our
@@ -481,13 +483,9 @@ install-xotcl-libraries: install-libraries
 	    $(INSTALL_DATA) $(xotcl_src_lib_dir)/$$i $(DESTDIR)$(xotcl_pkglibdir)/$$i ; \
 	done;
 
-install-xotcl-shells:
-	@if test -f $(xotcl_srcdir)/xotclsh; then \
-		$(INSTALL_PROGRAM) $(xotcl_srcdir)/xotclsh $(DESTDIR)$(bindir); \
-	fi
-	@if test -f $(xotcl_srcdir)/xowish; then \
-		$(INSTALL_PROGRAM) $(xotcl_srcdir)/xowish $(DESTDIR)$(bindir); \
-	fi
+install-xotcl-shells: $(XOTCL_SHELLS)
+	$(INSTALL_PROGRAM) xotclsh $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) xowish $(DESTDIR)$(bindir)
 
 install-xotcl-apps: install-xotcl-libraries
 	@echo "Installing Applications to $(DESTDIR)$(xotcl_pkglibdir)/apps/"
@@ -554,7 +552,7 @@ gdb:
 lldbtest:
 	$(MAKE) "TCLSH_PROG=lldb -b -o run -- $(TCLSH_PROG)" test
 
-test: binaries libraries test-core test-xotcl test-http @test_actiweb@
+test: binaries libraries $(SHELLS) test-core test-xotcl test-http @test_actiweb@
 	@if test ! "x$(subdirs)" = "x" ; then dirs="$(subdirs)" ; \
 	for dir in $$dirs ; do \
 	   if (cd $$dir; $(MAKE) $@) ; then true ; else exit 1 ; fi ; \
@@ -696,6 +694,11 @@ pkgIndex.tcl: $(PKG_LIB_FILE)
 install-pkgIndex:
 #	@echo package ifneeded nsf $(PACKAGE_VERSION) [list load [file join \$$dir .. "$(PKG_LIB_FILE)"] nsf] > "$(pkglibdir)/pkgIndex.tcl"
 
+$(SHELLS):
+	$(TCLSH_PROG) $(top_builddir)/build.tcl $@ $@ 
+	chmod +x $@
+
+
 #nxsh: tclAppInit.o $(PKG_OBJECTS) $(CONDITIONAL_STUB_OBJECTS)
 #	$(CC) -rdynamic -o $@ tclAppInit.o \
 #		$(CFLAGS)  $(TCL_LIB_SPEC) \
@@ -707,13 +710,9 @@ install-pkgIndex:
 #		$(CFLAGS)  $(TCL_LIB_SPEC) $(TK_LIB_SPEC) \
 #		$(DMALLOC_LIB) $(CONDITIONAL_STUB_OBJECTS)
 
-install-shells:
-	@if test -f nxsh; then \
-		$(INSTALL_PROGRAM) nxsh $(DESTDIR)$(bindir); \
-	fi
-	@if test -f nxwish; then \
-		$(INSTALL_PROGRAM) nxwish $(DESTDIR)$(bindir); \
-	fi
+install-shells: $(NSF_SHELLS)
+	$(INSTALL_PROGRAM) nxsh $(DESTDIR)$(bindir)
+	$(INSTALL_PROGRAM) nxwish $(DESTDIR)$(bindir)
 
 #========================================================================
 # We need to enumerate the list of .c to .o lines here.

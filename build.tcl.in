@@ -1,0 +1,181 @@
+#! /usr/bin/env tclsh
+
+
+proc fputs {filename content} {
+	set chan [open $filename w]
+	try {
+		puts $chan $content
+	} finally {
+		close $chan
+	}
+}
+
+
+proc heredoc doc {
+	if {![regexp {^(?:\s*?\n)(.*?)\n(?:\s(?!\n))*$} $doc[
+		set doc {}] -> doc]} {
+
+		error [list {bad heredoc format (missing final newline)}]
+	}
+	regsub -all {\\\\\n} [string trim $doc[set doc {}]] "\\\n" doc
+	regsub -lineanchor -all {^\t} $doc[set doc {}] {} doc
+	return $doc
+}
+
+
+proc innerscript namevar {
+	upvar script script
+	namespace upvar [namespace current] $namevar innerscript
+	append script \n$innerscript
+}
+
+
+proc requirescript name {
+	variable autopath
+	upvar script script
+	namespace upvar [namespace current] \
+		${name}_requirescript requirescript
+	append script \n[string map [list @requirescript@ [
+		list $requirescript] @requirescript2@ $requirescript] $autopath]
+}
+
+
+proc runshell {} {
+	upvar script script
+	append script \n [heredoc {
+		set exitCode [nx::shell run $argc $argv]
+		exit $exitCode
+	}]
+}
+
+
+proc shellscript {name filename} {
+	shelltotclsh $name
+	requirescript $name
+	innerscript $name
+	runshell
+	fputs $filename $script
+}
+
+
+proc shelltotclsh name {
+	variable shelltotclsh
+	upvar script script
+	set script [string map {@name@ $name} $shelltotclsh]
+}
+
+
+variable autopath [heredoc {
+	apply {{} {
+	if {[catch @requirescript@ cres copts]} {
+		set pkgdir @PACKAGE_NAME@@PACKAGE_VERSION@
+
+		set autopath [list ::apply {{dir pkgdir} {
+			global auto_path
+			set candidate $dir/$pkgdir
+			if {[file exists $candidate]} {
+				foreach tcldir [glob -directory $dir tcl*] {
+					set candidate1 $tcldir/site-tcl
+					if {[file exists $candidate1]} {
+						set auto_path [linsert $auto_path[
+						set auto_path {}] 0 $candidate1]
+					}
+				}
+
+				set auto_path [linsert $auto_path[
+				set auto_path {}] 0 $candidate]
+			}
+		}}]
+
+		set findpkgindex [list ::apply {{top pkgdir} {
+		upvar 1 autopath autopath 
+		foreach dir {lib lib64} {
+			{*}$autopath $top/$dir $pkgdir
+		}
+		set dirs [glob -nocomplain -directory $top -type d *]
+		foreach dir $dirs {
+			{*}$autopath $dir $pkgdir
+		}
+		foreach dir $dirs {
+			foreach dir [glob -nocomplain -directory \
+			$top/$dir -type d *] {
+			{*}$autopath $dir $pkgdir
+			}
+		}
+		}}]
+
+
+		set top [file dirname [file dirname [file dirname [
+		file normalize [info script]/...]]]]
+		{*}$findpkgindex $top $pkgdir
+
+		@requirescript2@
+	}
+	}}
+}]
+
+variable shelltotclsh [heredoc {
+	#! /bin/sh
+	# Lookup a Tcl interpreter \\
+	INTERP="tclsh@TCL_VERSION@"; \\
+	INTERPS="@NSF_COMPATIBLE_TCLSH@ @TCL_EXEC_PREFIX@/bin/$INTERP"; \\
+	for interp in $INTERPS; \\
+	do if [ -x $interp ]; then INTERP=$interp; break; \\
+	fi;  done; \\
+	exec $INTERP "$0" ${1+"$@"}
+
+	# -*- tcl -*-
+	#
+	# Tiny scripted replacement of a binary @name@. This script can be used
+	# as interactive shell for testing or like a regular shell with the #!
+	# markup in the first line of a script. It is designed to work with
+	# multiple installed Tcl shells during development.
+	#
+}]
+
+
+variable nxsh {
+	namespace import -force ::nx::*
+}
+
+variable nxsh_requirescript {
+	package require nx::shell 1.1
+}
+
+
+variable nxwish $nxsh
+
+variable nxwish_requirescript {
+	package require Tk
+	package require nx::shell 1.1
+}
+
+
+variable xotclsh {
+	namespace import -force ::xotcl::*
+}
+
+variable xotclsh_requirescript {
+	package require XOTcl 2
+	package require nx::shell 1.1
+}
+
+
+variable xowish $xotclsh
+
+variable xowish_requirescript {
+	package require Tk
+	package require XOTcl 2
+	package require nx::shell 1.1
+}
+
+
+namespace ensemble create -map {
+	nxsh  {shellscript nxsh}
+	nxwish {shellscript nxwish}
+	xotclsh {shellscript xotclsh}
+	xowish {shellscript xowish}
+}
+
+
+[namespace current] {*}$argv

@@ -394,7 +394,6 @@ cd ${NSF_BUILD_DIR}
 AC_SUBST([NSF_SRC_DIR])
 
 eval "NSF_PKG_LIBDIR=\"${libdir}/${PACKAGE_NAME}${PACKAGE_VERSION}\""
-AC_SUBST([NSF_PKG_LIBDIR])
 
 if test "${TEA_PLATFORM}" != "windows" ; then
 
@@ -461,7 +460,7 @@ dnl
 dnl Change the value of -this- macro if you want to add or remove
 dnl such files.
 
-AC_DEFUN([CONFIG_OUTPUT_FILES], [[Makefile ${srcdir}/nsfConfig.sh ${srcdir}/library/xotcl/xotclsh ${srcdir}/library/xotcl/xowish ${srcdir}/unix/pkgIndex.unix nxsh nxwish ${srcdir}/doc/version.inc]])
+AC_DEFUN([CONFIG_OUTPUT_FILES], [[Makefile ${srcdir}/nsfConfig.sh ${srcdir}/unix/pkgIndex.unix build.tcl ${srcdir}/doc/version.inc]])
 
 #--------------------------------------------------------------------
 # the value of this variable is set to the files which are to be
@@ -485,8 +484,6 @@ AC_CONFIG_FILES(CONFIG_OUTPUT_FILES)
 #--------------------------------------------------------------------
 
 AC_OUTPUT
-
-chmod +x nxsh nxwish ${srcdir}/library/xotcl/xotclsh ${srcdir}/library/xotcl/xowish
 
 for subdir in ${subdirs}
 do
