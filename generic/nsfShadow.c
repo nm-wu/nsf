@@ -6,6 +6,7 @@
  *
  * Copyright (C) 1999-2017 Gustaf Neumann
  * Copyright (C) 2019      Stefan Sobernig
+ * Copyright (C) 2020      Nathan Coulter
  *
  * Vienna University of Economics and Business
  * Institute of Information Systems and New Media
@@ -49,11 +50,10 @@ static Tcl_ObjCmdProc Nsf_RenameObjCmd;
  *----------------------------------------------------------------------
  * NsfReplaceCommandCleanup --
  *
- *    Undo the effects of NsfReplaceCommand() for the Tcl command
- *    referred by name.
+ *    Undoes the effects of NsfReplaceCommand() for the named Tcl command.
  *
  * Results:
- *    Tcl return code.
+ *    A Tcl return code.
  *
  * Side effects:
  *    None.
@@ -90,11 +90,11 @@ NsfReplaceCommandCleanup(Tcl_Interp *interp, Tcl_Obj *nameObj, NsfShadowTclComma
  *----------------------------------------------------------------------
  * NsfReplaceCommandCheck --
  *
- *    Test, whether shadowing is still in effect, and refresh the
- *    replacement if necessary.
+ *    Refreshes the wrapper command if needed and if overriding of Tcl commands
+ *    is in effect.
  *
  * Results:
- *    Tcl return code.
+ *    A Tcl return code.
  *
  * Side effects:
  *    None.
@@ -132,12 +132,11 @@ NsfReplaceCommandCheck(Tcl_Interp *interp, Tcl_Obj *nameObj, Tcl_ObjCmdProc *pro
  *----------------------------------------------------------------------
  * NsfReplaceCommand --
  *
- *    Lookup the objProc of a Tcl command and keep it around for
- *    efficient calling. Replace the objProc optionally with a newly
- *    specified one.
+ *    Looks up and stores the objProc of a Tcl command for efficient calling,
+ *    optionally replacing the objProc with the given replacement.
  *
  * Results:
- *    Tcl return code.
+ *    A Tcl return code.
  *
  * Side effects:
  *    None.
@@ -181,17 +180,16 @@ NsfReplaceCommand(Tcl_Interp *interp, Tcl_Obj *nameObj,
  *----------------------------------------------------------------------
  * Nsf_InfoBodyObjCmd --
  *
- *    TclObjCmd for shadowing "::tcl::info::body. In case the function
- *    is called with an nsf::proc (which is technically a command, not
- *    a proc), the original command fails ("not a proc"). We catch this
- *    call here and test, whether the body is from an nsf::proc. If
- *    so, we call tcl::info::body with the shadowed body.
+ *    A TclObjCmd for shadowing "::tcl::info::body.  If called with an
+ *    nsf::proc that is technically a command rather than a proc, the original
+ *    command fails with  "not a proc".  If the body is from an nsf::proc, call
+ *    tcl::info::body with the shadowed body.
  *
  *    Example:
  *       nsf::proc foo {-a} {puts $a};  info body foo
  *
  * Results:
- *    Tcl return code.
+ *    A Tcl return code.
  *
  * Side effects:
  *    None.
@@ -227,7 +225,7 @@ Nsf_InfoBodyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     }
   }
 
-  /* Actually call the cmd using Tcl's info body */
+  /* Call the original "info body" */
   return NsfCallCommand(interp, NSF_INFO_BODY, objc, objv);
 }
 
@@ -236,12 +234,12 @@ Nsf_InfoBodyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------
  * Nsf_RenameObjCmd --
  *
- *    TclObjCmd for shadowing "::rename". We check whether the cmd
- *    refers to an NsfObject. If so we have to destroy and/or "move"
- *    it. Otherwise proceed by calling the shadowed function.
+ *    TclObjCmd that wraps "::rename".  Destroys and/or renames the command if
+ *    it refers to an NsfObject.  Otherwise, simply calls the original
+ *    "::rename".
  *
  * Results:
- *    Tcl return code.
+ *    A Tcl return code.
  *
  * Side effects:
  *    None.
@@ -318,10 +316,10 @@ Nsf_RenameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  * Nsf_InfoFrameObjCmd --
  *
- *    TclObjCmd for shadowing "::tcl::info::frame". First we call the
- *    shadowed method. If it returns OK we check whether the frame is
- *    an NSF frame. If so, we remove from the result the misleading
- *    "proc" and add "method", "class", "object" and "frametype".
+ *    TclObjCmd that wraps "::tcl::info::frame". Calls the shadowed method, and
+ *    if it returns OK and the frame is an NSF frame, removes from the result
+ *    the misleading "proc" and adds "method", "class", "object" and
+ *    "frametype".
  *
  * Results:
  *    Tcl return code.
@@ -346,11 +344,11 @@ Nsf_InfoFrameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     Tcl_Obj     *resultObj = Tcl_GetObjResult(interp);
 
     /* 
-     * Level must be ok, otherwise we would not have a TCL_OK.
+     * Level must be ok or the result would not be TCL_OK.
      */
     Tcl_GetIntFromObj(interp, objv[1], &level);
 
-    /* todo: coroutine level messing is missing. Needed? */
+    /* todo: Is coroutine level handling needed here? */
     topLevel = (framePtr == NULL) ? 0 :  framePtr->level;
 
     if (level > 0) {
@@ -431,15 +429,17 @@ Nsf_InfoFrameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  * NsfShadowTclCommands --
  *
- *    Load/refresh/unload shadowed Tcl commands. Essentially, the
- *    shadowing function serve two things:
- *    (a) lookup some Tcl ObjProcs, which are not available via global
- *        symbols and make these available via NsfCallCommand().
- *    (b) some Tcl commands are actually shadowed; we perform some
- *        pre- and/or postprocessing on these calls.
+ *    Loads, refreshes, or unloads overridden Tcl commands. This routine serves
+ *    two purposes:
+ *
+ *        Looks up some Tcl ObjProcs which are not available via global
+ *        symbols in order to pass them to NsfCallCommand().
+ *
+ *        Performs pre- and/or postprocessing on Tcl commands are actually
+ *        overridden.
  *
  * Results:
- *    Tcl return code.
+ *    A Tcl return code.
  *
  * Side effects:
  *    None.
@@ -464,10 +464,10 @@ NsfShadowTclCommands(Tcl_Interp *interp, NsfShadowOperations load) {
 
 #ifdef USE_TCL_STUBS
     /*
-     * When the third argument of NsfReplaceCommand is NULL, the commands are
-     * not overloaded. However, we use this mechanism to call Tcl commands
-     * (Tcl_ExprObjCmd(), Tcl_IncrObjCmd() and Tcl_SubstObjCmd()), which cannot be
-     * called not available in though the stub table.
+     * When the third argument of NsfReplaceCommand is NULL the commands are
+     * not overloaded, but this mechanism is still used to call Tcl commands
+     * like Tcl_ExprObjCmd(), Tcl_IncrObjCmd() and Tcl_SubstObjCmd(), which are
+     * not available in the stub table.
      */
     rc |= NsfReplaceCommand(interp, NsfGlobalObjs[NSF_EXPR],       NULL, NULL, CMD_INFO(rst, NSF_EXPR));
 #endif
@@ -476,7 +476,7 @@ NsfShadowTclCommands(Tcl_Interp *interp, NsfShadowOperations load) {
     rc |= NsfReplaceCommand(interp, NsfGlobalObjs[NSF_STRING_IS],  NULL, NULL, CMD_INFO(rst, NSF_STRING_IS));
     rc |= NsfReplaceCommand(interp, NsfGlobalObjs[NSF_DISASSEMBLE],  NULL, NULL, CMD_INFO(rst, NSF_DISASSEMBLE));
 
-    /* for the following commands, we have to add our own semantics */
+    /* add custom semantics to the following commands */
     rc |= NsfReplaceCommand(interp, NsfGlobalObjs[NSF_INFO_BODY],  Nsf_InfoBodyObjCmd,  NULL, CMD_INFO(rst, NSF_INFO_BODY));
     rc |= NsfReplaceCommand(interp, NsfGlobalObjs[NSF_INFO_FRAME], Nsf_InfoFrameObjCmd, NULL, CMD_INFO(rst, NSF_INFO_FRAME));
     rc |= NsfReplaceCommand(interp, NsfGlobalObjs[NSF_RENAME],     Nsf_RenameObjCmd,    NULL, CMD_INFO(rst, NSF_RENAME));
@@ -501,12 +501,12 @@ NsfShadowTclCommands(Tcl_Interp *interp, NsfShadowOperations load) {
  *----------------------------------------------------------------------
  * NsfCallCommand --
  *
- *    Calls Tcl Commands as direct as possible. The commands have to be looked
- *    up previously via NsfShadowTclCommands(). The element objv[0] is
- *    replaced with the predefined command name.
+ *    Looks up and calls a Tcl command in the table previously populated by
+ *    NsfShadowTclCommands(), replacing objv[0] with the previously-stored name
+ *    of the command.
  *
  * Results:
- *    Tcl return code.
+ *    A Tcl return code.
  *
  * Side effects:
  *    None.
