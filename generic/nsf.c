@@ -17569,17 +17569,14 @@ ParamOptionParse(Tcl_Interp *interp, const char *argString,
     char trailingChar = *(option+12);
 
     if (trailingChar == '=') {
-      Tcl_Obj *ov[2];
+      Tcl_Obj *resultObj, *exprObj;
 
-      ov[0] = NULL;
-      ov[1] = Tcl_NewStringObj(option + 13, (int)optionLength - 13);
-      INCR_REF_COUNT(ov[1]);
-      result = Nsf_ExprObjCmd(NULL, interp, 2, ov);
-      DECR_REF_COUNT(ov[1]);
+      exprObj = Tcl_NewStringObj(option + 13, (int)optionLength - 13);
+      INCR_REF_COUNT(exprObj);
+      result = Tcl_ExprObj(interp, exprObj, &resultObj);
+      DECR_REF_COUNT(exprObj);
 
       if (result == TCL_OK) {
-        Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
-
         if ((Tcl_GetIntFromObj(interp, resultObj, &substDefaultFlags) != TCL_OK)
             || (substDefaultFlags < 0) || (substDefaultFlags > 7)
             ) {
@@ -17587,6 +17584,7 @@ ParamOptionParse(Tcl_Interp *interp, const char *argString,
                                "parameter option 'substdefault=' must be a value between 0b000 and 0b111: %s",
                                option);
         }
+        DECR_REF_COUNT(resultObj);
       } else {
         return NsfPrintError(interp, "substdefault expression failed: %s", ObjStr(Tcl_GetObjResult(interp)));
       }
