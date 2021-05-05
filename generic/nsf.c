@@ -17569,25 +17569,12 @@ ParamOptionParse(Tcl_Interp *interp, const char *argString,
     char trailingChar = *(option+12);
 
     if (trailingChar == '=') {
-      Tcl_Obj *resultObj, *exprObj;
-
-      exprObj = Tcl_NewStringObj(option + 13, (int)optionLength - 13);
-      INCR_REF_COUNT(exprObj);
-      result = Tcl_ExprObj(interp, exprObj, &resultObj);
-      DECR_REF_COUNT(exprObj);
-
-      if (result == TCL_OK) {
-        if ((Tcl_GetIntFromObj(interp, resultObj, &substDefaultFlags) != TCL_OK)
-            || (substDefaultFlags < 0) || (substDefaultFlags > 7)
-            ) {
-          return NsfPrintError(interp,
-                               "parameter option 'substdefault=' must be a value between 0b000 and 0b111: %s",
-                               option);
+      if ((Tcl_GetInt(interp, option + 13, &substDefaultFlags) != TCL_OK)
+            || (substDefaultFlags < 0) || (substDefaultFlags > 7)) {
+        return NsfPrintError(interp,
+                             "parameter option 'substdefault=' must be a value between 0b000 and 0b111: %s",
+                             option);
         }
-        DECR_REF_COUNT(resultObj);
-      } else {
-        return NsfPrintError(interp, "substdefault expression failed: %s", ObjStr(Tcl_GetObjResult(interp)));
-      }
     } else if (trailingChar == '\0' || trailingChar == ',') {
       substDefaultFlags = 7;
     } else {
