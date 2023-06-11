@@ -207,6 +207,23 @@ q"
 
 }
 
+nx::test case switch-params {
+  set cls [nx::Class new {
+    :property p1:boolean
+    :property p2:switch
+  }]
+
+  ? [list lmap p [$cls info variables] "[list $cls info variable parameter] \$p"] \
+      "p1:boolean p2:switch"
+
+  ? [list lmap p [$cls info variables] "[list $cls info variable definition] \$p"] \
+      [list [list $cls property -accessor none p1:boolean] \
+           [list $cls property -accessor none p2:switch]]
+}
+
+# TODO: switch on method parameters + info?
+# TODO: switch as sugar for boolean,noarg for nonpos?
+
 nx::test case object-variables {
   nx::Class create Bar {
     :property {p 9}
