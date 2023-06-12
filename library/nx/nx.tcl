@@ -1972,12 +1972,12 @@ namespace eval ::nx {
         lappend options [expr {[::nsf::is metaclass $type] ? "class" : "object"}] type=$type
       } else {
         lappend options $type
-        if {!$forInfo && $type ni [list "" \
-                             "boolean" "integer" "object" "class" \
-                             "metaclass" "baseclass" "parameter" \
-                             "alnum" "alpha" "ascii" "control" "digit" "double" \
-                             "false" "graph" "lower" "print" "punct" "space" "true" \
-                             "wideinteger" "wordchar" "xdigit" ]} {
+        if {$type ni [list "" \
+                          "boolean" "switch" "integer" "object" "class" \
+                          "metaclass" "baseclass" "parameter" \
+                          "alnum" "alpha" "ascii" "control" "digit" "double" \
+                          "false" "graph" "lower" "print" "punct" "space" "true" \
+                          "wideinteger" "wordchar" "xdigit" ]} {
           lappend options slot=[::nsf::self]
         }
       }
