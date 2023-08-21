@@ -2130,17 +2130,30 @@ namespace eval ::nx {
       set args [list obj var [:namedParameterSpec {} value $options]]
       :public object method value=set $args {::nsf::var::set $obj $var $value}
     }
-    if {[:isMultivalued] && [:info lookup method value=add] eq "::nsf::classes::nx::VariableSlot::value=add"} {
-      set slotObj "slot=[::nsf::self]"
-      # lappend options_single slot=[::nsf::self]
-      if {$slotObj ni $options_single} {lappend options_single $slotObj}
-      set vspec [:namedParameterSpec {} value $options_single]
-      set addArgs [list obj prop $vspec {pos 0}]
-      :public object method value=add $addArgs {::nsf::next [list $obj $prop $value $pos]}
-      set delArgs [list obj prop -nocomplain:switch $vspec]
-      :public object method value=delete $delArgs {::nsf::next [list $obj $prop -nocomplain=$nocomplain $value]}
-    } else {
-      # TODO should we deactivate add/delete?
+
+    if {[:isMultivalued]} {
+      foreach m {value=add value=delete} {
+        set mh [:info lookup method $m]
+        set isBase [string match "::nsf::classes::nx::VariableSlot::*" $mh]
+        if {$isBase} {
+          set slotObj "slot=[::nsf::self]"
+          # lappend options_single slot=[::nsf::self]
+          if {$slotObj ni $options_single} {lappend options_single $slotObj}
+          set vspec [:namedParameterSpec {} value $options_single]
+          
+          if {$m eq "value=add"} {
+            set addArgs [list obj prop $vspec {pos 0}]
+            :public object method value=add $addArgs {::nsf::next [list $obj $prop $value $pos]}
+          }
+          
+          if {$m eq "value=delete"} {
+            set delArgs [list obj prop -nocomplain:switch $vspec]
+            :public object method value=delete $delArgs {::nsf::next [list $obj $prop -nocomplain=$nocomplain $value]}
+          }
+        } else {
+          # TODO should we deactivate add/delete?
+        }
+      }
     }
   }
 
