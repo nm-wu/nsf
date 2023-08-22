@@ -2132,28 +2132,34 @@ namespace eval ::nx {
     }
 
     if {[:isMultivalued]} {
-      foreach m {value=add value=delete} {
+      set baseMethods [lmap m {value=add value=delete} {
         set mh [:info lookup method $m]
-        set isBase [string match "::nsf::classes::nx::VariableSlot::*" $mh]
-        if {$isBase} {
-          set slotObj "slot=[::nsf::self]"
-          # lappend options_single slot=[::nsf::self]
-          if {$slotObj ni $options_single} {lappend options_single $slotObj}
-          set vspec [:namedParameterSpec {} value $options_single]
-          
-          if {$m eq "value=add"} {
-            set addArgs [list obj prop $vspec {pos 0}]
-            :public object method value=add $addArgs {::nsf::next [list $obj $prop $value $pos]}
-          }
-          
-          if {$m eq "value=delete"} {
-            set delArgs [list obj prop -nocomplain:switch $vspec]
-            :public object method value=delete $delArgs {::nsf::next [list $obj $prop -nocomplain=$nocomplain $value]}
-          }
+        if {[string match "::nsf::classes::nx::VariableSlot::*" $mh]} {
+          set m
         } else {
-          # TODO should we deactivate add/delete?
+          continue
         }
+      }]
+
+      if {[llength $baseMethods]} {
+        set slotObj "slot=[::nsf::self]"
+        # lappend options_single slot=[::nsf::self]
+        if {$slotObj ni $options_single} {lappend options_single $slotObj}
+        set vspec [:namedParameterSpec {} value $options_single]
+        if {"value=add" in $baseMethods} {
+          set addArgs [list obj prop $vspec {pos 0}]
+          :public object method value=add $addArgs {::nsf::next [list $obj $prop $value $pos]}
+        }
+        
+        if {"value=delete" in $baseMethods} {
+          set delArgs [list obj prop -nocomplain:switch $vspec]
+          :public object method value=delete $delArgs \
+              {::nsf::next [list $obj $prop -nocomplain=$nocomplain $value]}
+        }
+      } else {
+        # TODO should we deactivate add/delete?
       }
+  
     }
   }
 
