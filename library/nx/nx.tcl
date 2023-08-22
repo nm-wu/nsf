@@ -2319,6 +2319,9 @@ namespace eval ::nx {
   }
 
   ::nx::VariableSlot public method value=delete {obj prop -nocomplain:switch value} {
+    if {![:isMultivalued]} {
+      return -code error "property $prop of [set :domain] is not multivalued"
+    }
     set old [::nsf::var::get $obj $prop]
     set p [lsearch -glob $old $value]
     if {$p > -1} {
