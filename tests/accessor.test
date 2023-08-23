@@ -200,7 +200,7 @@ nx::test case incremental-slot-override-with-type {
   ? {c3 c1b unset} ""
 
   # WITH incremental being set: set + add + delete are overriden by
-  # the slot (type-awareness must be taken care of explicitly, lost otherwise);
+  # the slot (Note: type-awareness must be taken care of explicitly, lost otherwise);
   set slotObj3 [c3 info lookup variables c1c]
   foreach m {value=set value=add value=delete} {
     ? [list $slotObj3 info lookup method $m] ${slotObj3}::$m
@@ -218,13 +218,11 @@ nx::test case incremental-slot-override-with-type {
   ? {c3 c1c unset}       ""
   ? {c3 info vars}       "trace"
   
-  ? {c3 eval {expr {"value=add" in ${:trace}}}} 1
+  ? {c3 eval {expr {"value=add" in ${:trace}}}}    1
   ? {c3 eval {expr {"value=delete" in ${:trace}}}} 1
-  ? {c3 eval {expr {"value=set" in ${:trace}}}} 0
-  ? {c3 c1c set [c3]}    [c3]
-  ? {c3 eval {expr {"value=set" in ${:trace}}}} 1
-
-  
+  ? {c3 eval {expr {"value=set" in ${:trace}}}}    0
+  ? {c3 c1c set [c3]}                              [c3]
+  ? {c3 eval {expr {"value=set" in ${:trace}}}}    1
 }
 
 
