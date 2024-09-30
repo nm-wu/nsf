@@ -31793,10 +31793,6 @@ ParamFreeInternalRep(
             (void*)paramWrapperPtr->paramPtr,
             paramWrapperPtr->refCount);*/
 
-    if (paramWrapperPtr->refCount < 0) {
-      char *p = NULL; *p=0;
-    }
-
     if (paramWrapperPtr->refCount <= 1) {
       ParamsFree(paramWrapperPtr->paramPtr);
       FREE(NsfParamWrapper, paramWrapperPtr);
