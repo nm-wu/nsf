@@ -119,7 +119,7 @@ jobs:
           curl -L -k -o tcl.tar.gz https://github.com/tcltk/tcl/archive/refs/tags/${TCLTAG}.tar.gz
       - name: Unpack Tcl tarball
         run: |
-	  tar -xzf tcl.tar.gz
+          tar -xzf tcl.tar.gz
         env:
           TCLTAG: ${{ matrix.tcltag }}
       - name: Configure ${{ matrix.cfgopt }}
