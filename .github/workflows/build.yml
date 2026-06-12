@@ -14,7 +14,7 @@ jobs:
         #   - ""
         include:
           - os: macos-latest
-            compiler: gcc-12
+            compiler: gcc-14
             tcltag: core-8-6-branch
             experimental: [true]
           - os: macos-latest
@@ -30,7 +30,7 @@ jobs:
             tcltag: core-8-6-branch
             experimental: [true]
           - os: ubuntu-latest
-            compiler: gcc-12
+            compiler: gcc-14
             tcltag: trunk
             experimental: [true]
           - os: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
             tcltag: trunk
             experimental: [true]
           - os: ubuntu-latest
-            compiler: gcc-12
+            compiler: gcc-14
             tcltag: core-8-6-branch
             experimental: [true]
           - os: ubuntu-latest
@@ -49,33 +49,49 @@ jobs:
             compiler: gcc-14
             tcltag: core-8-branch
             experimental: [true]
+	  - os: macos-latest
+            compiler: gcc-14
+            tcltag: core-9-branch
+            experimental: [true]
+	  - os: macos-latest
+            compiler: gcc-14
+            tcltag: core-9-0-branch
+            experimental: [true]
           - os: macos-latest
             compiler: gcc-14
             tcltag: core-8-5-branch
             experimental: [true]
           - os: ubuntu-latest
-            compiler: gcc-12
+            compiler: gcc-14
             tcltag: core-8-branch
             experimental: [true]
+	  - os: ubuntu-latest
+            compiler: gcc-14
+            tcltag: core-9-branch
+            experimental: [true]
+	  - os: ubuntu-latest
+            compiler: gcc-14
+            tcltag: core-9-0-branch
+            experimental: [true]
           - os: ubuntu-latest
-            compiler: gcc-12
+            compiler: gcc-14
             tcltag: core-8-5-branch
             experimental: [true]
           - os: macos-latest
             compiler: gcc-14
-            tcltag: core-8-6-15
+            tcltag: core-8-6-18
             experimental: [false]
           - os: macos-latest
             compiler: gcc-14
-            tcltag: core-9-0-0
+            tcltag: core-9-0-3
             experimental: [false]
           - os: ubuntu-latest
-            compiler: gcc-12
-            tcltag: core-8-6-15
+            compiler: gcc-14
+            tcltag: core-8-6-18
             experimental: [false]
           - os: ubuntu-latest
-            compiler: gcc-12
-            tcltag: core-9-0-0
+            compiler: gcc-14
+            tcltag: core-9-0-3
             experimental: [false]
     defaults:
       run:
