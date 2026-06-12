@@ -109,10 +109,17 @@ jobs:
         with:
           repository: nm-wu/nsf
           token: ${{ secrets.PAT }}
-      - name: Download Tcl tarball
+      - name: Download Tcl tarball (branch)
+        if: ${{ endsWith(matrix.tcltag, '-branch') }}
         run: |
-          curl -L -k -o tcl.tar.gz https://core.tcl-lang.org/tcl/tarball/tcl.tar.gz?uuid=${TCLTAG}
-          tar -xzf tcl.tar.gz
+          curl -L -k -o tcl.tar.gz https://github.com/tcltk/tcl/archive/refs/heads/${TCLTAG}.tar.gz
+      - name: Download Tcl tarball (tag)
+        if: ${{ !endsWith(matrix.tcltag, '-branch') }}
+        run: |
+          curl -L -k -o tcl.tar.gz https://github.com/tcltk/tcl/archive/refs/tags/${TCLTAG}.tar.gz
+      - name: Unpack Tcl tarball
+        run: |
+	  tar -xzf tcl.tar.gz
         env:
           TCLTAG: ${{ matrix.tcltag }}
       - name: Configure ${{ matrix.cfgopt }}
