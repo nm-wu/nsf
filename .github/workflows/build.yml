@@ -123,7 +123,8 @@ jobs:
           TCLTAG: ${{ matrix.tcltag }}
       - name: Unpack Tcl tarball
         run: |
-          tar -xzf tcl.tar.gz
+          mkdir tcl
+          tar -xzf tcl.tar.gz  -C tcl --strip-components=1
       - name: Configure ${{ matrix.cfgopt }}
         run: |
           mkdir "${GITHUB_WORKSPACE}/build"
