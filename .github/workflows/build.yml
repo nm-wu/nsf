@@ -112,7 +112,7 @@ jobs:
         env:
           TCLTAG: ${{ matrix.tcltag }}
       - name: Download Tcl tarball (tag)
-        if: ${{ !endsWith(matrix.tcltag, '-branch') }}
+        if: ${{ matrix.tcltag != 'trunk' && !endsWith(matrix.tcltag, '-branch') }}
         run: |
           curl -L -k -o tcl.tar.gz https://github.com/tcltk/tcl/archive/refs/tags/${TCLTAG}.tar.gz
         env:
