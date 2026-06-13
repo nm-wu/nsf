@@ -51,10 +51,6 @@ jobs:
             experimental: [true]
           - os: macos-latest
             compiler: gcc-14
-            tcltag: core-9-branch
-            experimental: [true]
-          - os: macos-latest
-            compiler: gcc-14
             tcltag: core-9-0-branch
             experimental: [true]
           - os: macos-latest
@@ -64,10 +60,6 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc-14
             tcltag: core-8-branch
-            experimental: [true]
-          - os: ubuntu-latest
-            compiler: gcc-14
-            tcltag: core-9-branch
             experimental: [true]
           - os: ubuntu-latest
             compiler: gcc-14
@@ -109,6 +101,10 @@ jobs:
         with:
           repository: nm-wu/nsf
           token: ${{ secrets.PAT }}
+      - name: Download Tcl tarball (trunk)
+        if: ${{ matrix.tcltag == 'trunk' }}
+        run: |
+          curl -L -k -o tcl.tar.gz https://github.com/tcltk/tcl/archive/refs/heads/main.tar.gz
       - name: Download Tcl tarball (branch)
         if: ${{ endsWith(matrix.tcltag, '-branch') }}
         run: |
