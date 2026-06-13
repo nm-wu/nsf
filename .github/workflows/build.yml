@@ -113,13 +113,13 @@ jobs:
         if: ${{ endsWith(matrix.tcltag, '-branch') }}
         run: |
           curl -L -k -o tcl.tar.gz https://github.com/tcltk/tcl/archive/refs/heads/${TCLTAG}.tar.gz
-	env:
+        env:
           TCLTAG: ${{ matrix.tcltag }}
       - name: Download Tcl tarball (tag)
         if: ${{ !endsWith(matrix.tcltag, '-branch') }}
         run: |
           curl -L -k -o tcl.tar.gz https://github.com/tcltk/tcl/archive/refs/tags/${TCLTAG}.tar.gz
-	env:
+        env:
           TCLTAG: ${{ matrix.tcltag }}
       - name: Unpack Tcl tarball
         run: |
