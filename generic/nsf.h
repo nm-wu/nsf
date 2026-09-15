@@ -517,7 +517,7 @@ typedef struct Nsf_Param {
 # else
 #  define NSF_FALL_THROUGH ((void)0)
 # endif
-#elif __GNUC_PREREQ(7, 0)
+#elif NSF__GNUC_PREREQ(7, 0)
 # define NSF_FALL_THROUGH ; __attribute__((fallthrough))
 #else
 # define NSF_FALL_THROUGH ((void)0)
