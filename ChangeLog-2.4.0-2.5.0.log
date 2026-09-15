@@ -1,3 +1,16 @@
+2026-09-15  Gustaf Neumann  <neumann@wu-wien.ac.at>
+
+	* Announce2.5.0: Refresh 2.5.0 announcement highlights and compatibility notes [19156f3c, 5624b78e]
+	- Clarify release scope (NSF/NX/XOTcl 2.5.0) and update highlight list
+	- Rewrite Tcl 9 ABI note: require separate builds for Tcl 9.0 vs 9.1
+	- Reorganize/expand change summaries (dispatch, parseargs, validation,
+	  zip flushing, MongoDB JSON/oid additions, hardening/build)
+	- Update acknowledgements, diff stats, and tested Tcl versions/CI links
+	- Rename doc reference from "info const" to "info consts"
+
+	* nx-zip.tcl: Avoid double detach of ns_connchan in zip streaming
+	[8d973a9e]
+
 2026-09-12  Stefan Sobernig  <stefan.sobernig@wu.ac.at>
 
 	* nsf-gridfs.test: Make test script location independent
@@ -14,6 +27,28 @@
 	* nsfmongo.c: Tcl-9 compat reform, adopt TCL_SIZE_T to avoid
 	stack corruption (bewetween two int variables) in at least one function
 	(NsfMongoCollectionQuery) [c162436e]
+
+2026-09-11  Gustaf Neumann  <neumann@wu-wien.ac.at>
+
+	* nsf.h: Correct fallthrough macro name to NSF_FALL_THROUGH
+	[f99d0442]
+
+2026-09-10  Gustaf Neumann  <neumann@wu-wien.ac.at>
+
+	* nsf.h: Add leading semicolon to NS_FALL_THROUGH macro [41132f64]
+	- Prefix fallthrough attribute with `;` for clang and GCC >= 7
+	- The leading semicolon seems necessary for native GCC
+
+2026-09-09  Gustaf Neumann  <neumann@wu-wien.ac.at>
+
+	* Makefile.in, nsf.c, nsf.h, nsfmongo.c: Harden clang builds and
+	quiet uninitialized warnings [e8715485]
+	- Add extra clang warning flags (-Wconditional-uninitialized, -Wimplicit-fallthrough,
+	  -Wswitch-enum) when supported
+	- Initialize potentially uninitialized locals and add missing switch break to
+	  satisfy stricter diagnostics
+	- Make NSF_FALL_THROUGH clang-aware via __has_attribute(fallthrough)
+	- Fix GridFS logging format specifiers for size_t (%zu)
 
 2026-08-28  Gustaf Neumann  <neumann@wu-wien.ac.at>
 
