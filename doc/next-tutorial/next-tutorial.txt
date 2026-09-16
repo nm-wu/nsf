@@ -1,14 +1,14 @@
 Tutorial for the Next Scripting Language
 ==========================================
 Gustaf Neumann <neumann@wu-wien.ac.at>, Stefan Sobernig <stefan.sobernig@wu.ac.at>
-v2.4.0, Aug 2022:
+v2.5.0, Sep 2026:
 Written for the Initial Release of the Next Scripting Framework.
 :Author Initials: GN
 :toc:
 :toclevels: 4
 :icons:
 :numbered:
-:website: http://www.xotcl.org/
+:website: http://next-scripting.org/
 
 .Abstract
 *****************************************************************************

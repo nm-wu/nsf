@@ -1,13 +1,13 @@
 Migration Guide for the Next Scripting Language
 ===============================================
 Gustaf Neumann <neumann@wu-wien.ac.at>
-v2.4.0, Aug 2022:
+v2.5.0, Sep 2026:
 :Author Initials: GN
 :toc:
 :toclevels: 3
 :icons:
 :numbered:
-:website: http://www.xotcl.org/
+:website: http://next-scripting.org/
 
 .Abstract
 *****************************************************************************
